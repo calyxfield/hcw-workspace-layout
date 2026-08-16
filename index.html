@@ -238,6 +238,7 @@
       line-height: 1;
     }
     .window-control:hover { background: rgb(255 255 255 / 34%); }
+    .window-control.pin[aria-pressed="true"] { color: white; background: var(--orange); }
     .window-control.close:hover { color: white; background: var(--red); }
 
     .window-body { min-width: 0; min-height: 0; overflow: auto; background: var(--paper); }
@@ -257,13 +258,23 @@
     .window-footer span:last-child { margin-left: auto; }
     .resize-handle {
       position: absolute;
-      right: 0;
-      bottom: 0;
       z-index: 4;
-      width: 17px;
-      height: 17px;
-      cursor: nwse-resize;
       touch-action: none;
+    }
+    .resize-handle[data-resize="w"] { left: 0; top: 31px; bottom: 20px; width: 6px; cursor: ew-resize; }
+    .resize-handle[data-resize="e"] { right: 0; top: 31px; bottom: 20px; width: 6px; cursor: ew-resize; }
+    .resize-handle[data-resize="s"] { left: 17px; right: 17px; bottom: 0; height: 6px; cursor: ns-resize; }
+    .resize-handle[data-resize="sw"],
+    .resize-handle[data-resize="se"] { bottom: 0; width: 17px; height: 17px; }
+    .resize-handle[data-resize="sw"] {
+      left: 0;
+      cursor: nesw-resize;
+      background: repeating-linear-gradient(45deg, transparent 0 3px, #63706e 3px 4px);
+      clip-path: polygon(0 0, 100% 100%, 0 100%);
+    }
+    .resize-handle[data-resize="se"] {
+      right: 0;
+      cursor: nwse-resize;
       background: repeating-linear-gradient(135deg, transparent 0 3px, #63706e 3px 4px);
       clip-path: polygon(100% 0, 100% 100%, 0 100%);
     }
@@ -311,6 +322,7 @@
     .task-button:hover { background: #eef0e7; }
     .task-button.active { color: white; border-color: var(--navy); background: var(--navy-2); }
     .task-button.minimized { color: var(--ink-soft); background: #c8cdc7; }
+    .task-button.pinned .task-code { color: white; border-color: var(--orange); background: var(--orange); }
     .task-code { display: grid; place-items: center; height: 20px; border: 1px solid currentColor; font-size: .42rem; }
     .task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .desk-actions { display: flex; align-items: center; gap: 5px; padding: 5px 7px 5px 0; }
@@ -615,7 +627,7 @@ Compare variant B after the next test.</textarea>
       const snapPreview = document.querySelector('#snap-preview');
       const toast = document.querySelector('#toast');
       const saveIndicator = document.querySelector('#save-indicator');
-      const STORAGE_KEY = 'hcw-workspace-layout-v1';
+      const STORAGE_KEY = 'hcw-workspace-layout-v2';
       const GRID = 9;
       let zCounter = 20;
       let activeId = null;
@@ -635,6 +647,7 @@ Compare variant B after the next test.</textarea>
         open: false,
         minimized: false,
         maximized: false,
+        pinned: id === 'designer',
         x: apps[id].x,
         y: apps[id].y,
         w: apps[id].w,
@@ -722,12 +735,17 @@ Compare variant B after the next test.</textarea>
             <span class="window-controls">
               <button class="window-control" data-window-action="minimize" aria-label="Minimize ${app.title}">_</button>
               <button class="window-control" data-window-action="maximize" aria-label="Maximize ${app.title}">□</button>
+              <button class="window-control pin" data-window-action="pin" aria-label="Pin ${app.title}" aria-pressed="false">◆</button>
               <button class="window-control close" data-window-action="close" aria-label="Close ${app.title}">×</button>
             </span>
           </header>
           <div class="window-body"></div>
           <footer class="window-footer"><span>${app.code} APPLICATION</span><span>READY</span></footer>
-          <div class="resize-handle" aria-hidden="true"></div>`;
+          <div class="resize-handle" data-resize="w" aria-hidden="true"></div>
+          <div class="resize-handle" data-resize="e" aria-hidden="true"></div>
+          <div class="resize-handle" data-resize="s" aria-hidden="true"></div>
+          <div class="resize-handle" data-resize="sw" aria-hidden="true"></div>
+          <div class="resize-handle" data-resize="se" aria-hidden="true"></div>`;
         const template = document.querySelector(`#${app.template}`);
         element.querySelector('.window-body').append(template.content.cloneNode(true));
         desktop.append(element);
@@ -742,6 +760,7 @@ Compare variant B after the next test.</textarea>
             const action = button.dataset.windowAction;
             if (action === 'minimize') minimizeWindow(id);
             if (action === 'maximize') toggleMaximize(id);
+            if (action === 'pin') togglePin(id);
             if (action === 'close') closeWindow(id);
           });
         });
@@ -758,6 +777,8 @@ Compare variant B after the next test.</textarea>
         state[id].open = true;
         state[id].minimized = false;
         element.hidden = false;
+        element.classList.toggle('pinned', state[id].pinned);
+        element.querySelector('[data-window-action="pin"]').setAttribute('aria-pressed', String(state[id].pinned));
         element.classList.toggle('maximized', state[id].maximized);
         if (state[id].maximized) maximizeToPlane(id);
         else setRect(id, state[id]);
@@ -816,6 +837,29 @@ Compare variant B after the next test.</textarea>
         focusWindow(id);
         renderTasks();
         publish('window:maximized', { id, maximized: state[id].maximized }, id);
+      }
+
+      function togglePin(id) {
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        state[id].pinned = !state[id].pinned;
+        element.classList.toggle('pinned', state[id].pinned);
+        element.querySelector('[data-window-action="pin"]').setAttribute('aria-pressed', String(state[id].pinned));
+        renderTasks();
+        showToast(state[id].pinned ? `${apps[id].title} pinned` : `${apps[id].title} unpinned`);
+        publish('window:pinned', { id, pinned: state[id].pinned }, id);
+      }
+
+      function closeUnpinnedWindows() {
+        const closing = Object.keys(state).filter((id) => state[id].open && !state[id].pinned);
+        closing.forEach(closeWindow);
+        const remaining = Object.keys(state)
+          .filter((id) => state[id].open && !state[id].minimized)
+          .sort((a, b) => state[b].z - state[a].z);
+        if (remaining[0]) focusWindow(remaining[0]);
+        showToast(closing.length ? `${closing.length} unpinned window${closing.length === 1 ? '' : 's'} closed` : 'All open windows are pinned');
+        publish('workspace:delete-cleanout', { closed: closing }, 'workspace');
+        return closing;
       }
 
       function snapZone(clientX, clientY) {
@@ -892,31 +936,46 @@ Compare variant B after the next test.</textarea>
       }
 
       function installResize(id, element) {
-        const handle = element.querySelector('.resize-handle');
-        handle.addEventListener('pointerdown', (event) => {
-          if (event.button !== 0 || state[id].maximized) return;
-          event.preventDefault();
-          event.stopPropagation();
-          focusWindow(id);
-          handle.setPointerCapture(event.pointerId);
-          const start = { clientX: event.clientX, clientY: event.clientY, w: state[id].w, h: state[id].h };
-          const move = (moveEvent) => {
-            setRect(id, {
+        element.querySelectorAll('.resize-handle').forEach((handle) => {
+          handle.addEventListener('pointerdown', (event) => {
+            if (event.button !== 0 || state[id].maximized) return;
+            event.preventDefault();
+            event.stopPropagation();
+            focusWindow(id);
+            handle.setPointerCapture(event.pointerId);
+            const direction = handle.dataset.resize;
+            const start = {
+              clientX: event.clientX,
+              clientY: event.clientY,
               x: state[id].x,
               y: state[id].y,
-              w: snap(start.w + moveEvent.clientX - start.clientX),
-              h: snap(start.h + moveEvent.clientY - start.clientY),
-            });
-          };
-          const up = () => {
-            handle.removeEventListener('pointermove', move);
-            handle.removeEventListener('pointerup', up);
-            handle.removeEventListener('pointercancel', up);
-            publish('window:resized', { id, rect: { ...state[id] } }, id);
-          };
-          handle.addEventListener('pointermove', move);
-          handle.addEventListener('pointerup', up);
-          handle.addEventListener('pointercancel', up);
+              w: state[id].w,
+              h: state[id].h,
+            };
+            const move = (moveEvent) => {
+              const dx = moveEvent.clientX - start.clientX;
+              const dy = moveEvent.clientY - start.clientY;
+              const next = { x: start.x, y: start.y, w: start.w, h: start.h };
+              if (direction.includes('e')) next.w = snap(start.w + dx);
+              if (direction.includes('s')) next.h = snap(start.h + dy);
+              if (direction.includes('w')) {
+                const right = start.x + start.w;
+                const minWidth = Math.min(apps[id].minW, planeSize().width);
+                next.x = clamp(snap(start.x + dx), 0, right - minWidth);
+                next.w = right - next.x;
+              }
+              setRect(id, next);
+            };
+            const up = () => {
+              handle.removeEventListener('pointermove', move);
+              handle.removeEventListener('pointerup', up);
+              handle.removeEventListener('pointercancel', up);
+              publish('window:resized', { id, direction, rect: { ...state[id] } }, id);
+            };
+            handle.addEventListener('pointermove', move);
+            handle.addEventListener('pointerup', up);
+            handle.addEventListener('pointercancel', up);
+          });
         });
       }
 
@@ -933,6 +992,7 @@ Compare variant B after the next test.</textarea>
           button.className = 'task-button';
           button.classList.toggle('active', id === activeId && !state[id].minimized);
           button.classList.toggle('minimized', state[id].minimized);
+          button.classList.toggle('pinned', state[id].pinned);
           button.innerHTML = `<span class="task-code">${apps[id].code}</span><span class="task-name">${apps[id].title}</span>`;
           button.addEventListener('click', () => {
             if (state[id].minimized) openWindow(id);
@@ -981,6 +1041,7 @@ Compare variant B after the next test.</textarea>
           open: value.open,
           minimized: value.minimized,
           maximized: value.maximized,
+          pinned: value.pinned,
           x: value.x,
           y: value.y,
           w: value.w,
@@ -991,7 +1052,7 @@ Compare variant B after the next test.</textarea>
       }
 
       function saveLayout() {
-        const payload = { version: 1, activeId, zCounter, state: serializableState(), savedAt: new Date().toISOString() };
+        const payload = { version: 2, activeId, zCounter, state: serializableState(), savedAt: new Date().toISOString() };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         saveIndicator.textContent = 'SAVED NOW';
         showToast('Workspace layout saved locally');
@@ -1038,17 +1099,37 @@ Compare variant B after the next test.</textarea>
       document.querySelectorAll('.launch-button').forEach((button) => button.addEventListener('click', () => openWindow(button.dataset.app)));
       document.querySelector('#clean-desk').addEventListener('click', cleanDesk);
       document.querySelector('#save-layout').addEventListener('click', saveLayout);
+      document.addEventListener('keydown', (event) => {
+        const target = event.target;
+        const isEditing = target instanceof HTMLElement && (
+          target.matches('input, textarea, select') ||
+          target.isContentEditable
+        );
+        if (event.key !== 'Delete' || event.metaKey || event.ctrlKey || event.altKey || isEditing) return;
+        event.preventDefault();
+        closeUnpinnedWindows();
+      });
       window.addEventListener('resize', handleResize);
       setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
       document.querySelector('#clock').textContent = new Date().toLocaleTimeString('en-GB');
 
-      window.WorkspaceBridge = Object.freeze({ open: openWindow, publish, subscribe, save: saveLayout, getLayout: serializableState });
+      window.WorkspaceBridge = Object.freeze({
+        open: openWindow,
+        pin: togglePin,
+        closeUnpinned: closeUnpinnedWindows,
+        publish,
+        subscribe,
+        save: saveLayout,
+        getLayout: serializableState,
+      });
       window.__workspaceDebug = {
         getState: () => ({ activeId, zCounter, windows: serializableState() }),
         open: openWindow,
         minimize: minimizeWindow,
         close: closeWindow,
         maximize: toggleMaximize,
+        pin: togglePin,
+        closeUnpinned: closeUnpinnedWindows,
         clean: cleanDesk,
         save: saveLayout,
         restore: restoreLayout,
