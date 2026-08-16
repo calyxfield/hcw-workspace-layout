@@ -1,0 +1,1070 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#182a34">
+  <title>Henry Control Works · Research Desk Prototype</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #17252d;
+      --ink-soft: #526169;
+      --paper: #ece9de;
+      --paper-deep: #ddd9cc;
+      --desktop: #aab4b0;
+      --desktop-dark: #899590;
+      --line: #6c7877;
+      --line-dark: #263b43;
+      --navy: #183746;
+      --navy-2: #244d5d;
+      --blue: #276783;
+      --blue-light: #d2e3e8;
+      --orange: #cc6c35;
+      --orange-light: #f0d4bd;
+      --green: #3f7569;
+      --green-light: #d2dfd8;
+      --red: #a94133;
+      --shadow: rgb(21 32 36 / 28%);
+      --grid: rgb(37 57 63 / 12%);
+      --topbar: 38px;
+      --shelf: 46px;
+      --dock: 76px;
+      font-family: "SFMono-Regular", "Berkeley Mono", Consolas, "Liberation Mono", monospace;
+      font-size: 16px;
+      background: var(--desktop);
+      color: var(--ink);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    button, textarea { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, textarea:focus-visible { outline: 2px solid #f6ad61; outline-offset: -2px; }
+
+    .workstation {
+      height: 100%;
+      display: grid;
+      grid-template-rows: var(--topbar) minmax(0, 1fr) var(--shelf);
+      background: var(--desktop);
+    }
+
+    .system-bar {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 11px;
+      color: #edf2ef;
+      border-bottom: 1px solid #07161d;
+      background: var(--navy);
+      box-shadow: 0 2px 0 rgb(255 255 255 / 12%) inset;
+      user-select: none;
+    }
+
+    .hcw-mark {
+      width: 22px;
+      height: 22px;
+      display: grid;
+      place-items: center;
+      color: var(--navy);
+      background: #e8e4d4;
+      font-size: .6rem;
+      font-weight: 900;
+      letter-spacing: -.04em;
+      clip-path: polygon(0 0, calc(100% - 5px) 0, 100% 5px, 100% 100%, 5px 100%, 0 calc(100% - 5px));
+    }
+
+    .system-title { min-width: 0; font-size: .67rem; font-weight: 800; letter-spacing: .08em; white-space: nowrap; }
+    .system-context { color: #9fb6be; font-size: .55rem; letter-spacing: .06em; white-space: nowrap; }
+    .system-spacer { flex: 1; }
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      color: #c9d7d9;
+      font-size: .53rem;
+      white-space: nowrap;
+    }
+    .status-dot { width: 7px; height: 7px; background: #79b09b; border: 1px solid #b8d8cb; }
+
+    .desktop-region {
+      min-width: 0;
+      min-height: 0;
+      display: grid;
+      grid-template-columns: var(--dock) minmax(0, 1fr);
+    }
+
+    .launcher {
+      min-height: 0;
+      padding: 8px 7px;
+      overflow: auto;
+      border-right: 1px solid var(--line-dark);
+      background: #c5ccc6;
+      box-shadow: -8px 0 14px rgb(255 255 255 / 24%) inset;
+    }
+
+    .launcher-label {
+      margin: 2px 0 8px;
+      color: var(--ink-soft);
+      font-size: .47rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+      text-align: center;
+    }
+
+    .launch-button {
+      width: 62px;
+      min-height: 60px;
+      display: grid;
+      justify-items: center;
+      align-content: center;
+      gap: 4px;
+      margin: 0 0 6px;
+      padding: 5px 2px 4px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .launch-button:hover { border-color: #71807d; background: rgb(239 239 226 / 58%); }
+    .launch-button[data-open="true"] { color: #173e4e; background: rgb(222 234 230 / 72%); border-color: #68827d; }
+    .launch-icon {
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line-dark);
+      background: var(--paper);
+      box-shadow: 3px 3px 0 rgb(38 59 67 / 18%);
+      font-size: .58rem;
+      font-weight: 900;
+    }
+    .launch-button[data-app="designer"] .launch-icon { background: #203d49; color: #cfe4e7; }
+    .launch-button[data-app="manual"] .launch-icon { background: #e4dac5; color: #704c31; }
+    .launch-button[data-app="contract"] .launch-icon { background: #d4dfd9; color: #285e53; }
+    .launch-button[data-app="trace"] .launch-icon { background: #ead1c1; color: #893e2b; }
+    .launch-button[data-app="notes"] .launch-icon { background: #ede7ad; color: #625c25; }
+    .launch-button[data-app="archive"] .launch-icon { background: #d9dce1; color: #3e4b60; }
+    .launch-name { max-width: 58px; font-size: .46rem; font-weight: 800; line-height: 1.15; text-align: center; }
+
+    .desktop-plane {
+      position: relative;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      background-color: var(--desktop);
+      background-image:
+        linear-gradient(var(--grid) 1px, transparent 1px),
+        linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+        linear-gradient(135deg, rgb(255 255 255 / 10%), transparent 46%);
+      background-size: 18px 18px, 18px 18px, 100% 100%;
+    }
+
+    .desktop-stamp {
+      position: absolute;
+      right: 14px;
+      bottom: 12px;
+      color: rgb(29 48 53 / 42%);
+      font-size: .5rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      text-align: right;
+      user-select: none;
+      pointer-events: none;
+    }
+    .desktop-stamp strong { display: block; margin-top: 2px; font-size: .68rem; letter-spacing: .12em; }
+
+    .snap-preview {
+      position: absolute;
+      z-index: 9998;
+      display: none;
+      border: 2px dashed #dce9e7;
+      background: rgb(30 83 99 / 18%);
+      pointer-events: none;
+    }
+    .snap-preview.visible { display: block; }
+
+    .app-window {
+      position: absolute;
+      min-width: 260px;
+      min-height: 160px;
+      display: grid;
+      grid-template-rows: 31px minmax(0, 1fr) 20px;
+      overflow: hidden;
+      border: 1px solid var(--line-dark);
+      background: var(--paper);
+      box-shadow: 7px 8px 0 var(--shadow);
+      transform: translate3d(0, 0, 0);
+    }
+    .app-window[hidden] { display: none; }
+    .app-window.active { border-color: #0c2d3a; box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
+    .app-window.maximized { box-shadow: none; }
+
+    .titlebar {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 27px minmax(0, 1fr) auto;
+      align-items: stretch;
+      border-bottom: 1px solid var(--line-dark);
+      background: #9da8a5;
+      cursor: move;
+      user-select: none;
+      touch-action: none;
+    }
+    .active .titlebar { color: #eff4f1; background: var(--navy-2); }
+    .window-code {
+      display: grid;
+      place-items: center;
+      border-right: 1px solid var(--line-dark);
+      background: rgb(255 255 255 / 18%);
+      font-size: .53rem;
+      font-weight: 900;
+    }
+    .window-heading { min-width: 0; display: flex; align-items: baseline; gap: 8px; padding: 6px 8px 0; }
+    .window-heading strong { overflow: hidden; font-size: .59rem; letter-spacing: .055em; text-overflow: ellipsis; white-space: nowrap; }
+    .window-heading small { overflow: hidden; color: currentColor; opacity: .64; font-size: .45rem; text-overflow: ellipsis; white-space: nowrap; }
+    .window-controls { display: flex; align-items: stretch; }
+    .window-control {
+      width: 27px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      border: 0;
+      border-left: 1px solid var(--line-dark);
+      background: rgb(255 255 255 / 14%);
+      cursor: pointer;
+      font-size: .62rem;
+      line-height: 1;
+    }
+    .window-control:hover { background: rgb(255 255 255 / 34%); }
+    .window-control.close:hover { color: white; background: var(--red); }
+
+    .window-body { min-width: 0; min-height: 0; overflow: auto; background: var(--paper); }
+    .window-footer {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 7px;
+      border-top: 1px solid #8b928d;
+      color: var(--ink-soft);
+      background: var(--paper-deep);
+      font-size: .43rem;
+      letter-spacing: .04em;
+      user-select: none;
+    }
+    .window-footer span:last-child { margin-left: auto; }
+    .resize-handle {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      z-index: 4;
+      width: 17px;
+      height: 17px;
+      cursor: nwse-resize;
+      touch-action: none;
+      background: repeating-linear-gradient(135deg, transparent 0 3px, #63706e 3px 4px);
+      clip-path: polygon(100% 0, 100% 100%, 0 100%);
+    }
+    .maximized .resize-handle { display: none; }
+
+    .shelf {
+      min-width: 0;
+      display: grid;
+      grid-template-columns: 76px minmax(0, 1fr) auto;
+      align-items: center;
+      border-top: 1px solid var(--line-dark);
+      background: #c4cac3;
+      box-shadow: 0 2px 0 rgb(255 255 255 / 55%) inset;
+    }
+    .desk-menu {
+      align-self: stretch;
+      display: grid;
+      place-items: center;
+      border: 0;
+      border-right: 1px solid var(--line-dark);
+      background: var(--navy);
+      color: white;
+      font-size: .55rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+      cursor: default;
+    }
+    .task-list { min-width: 0; display: flex; align-items: center; gap: 5px; padding: 5px 7px; overflow-x: auto; }
+    .task-button {
+      max-width: 164px;
+      min-width: 88px;
+      height: 34px;
+      display: grid;
+      grid-template-columns: 20px minmax(0, 1fr);
+      align-items: center;
+      gap: 5px;
+      padding: 0 7px 0 5px;
+      border: 1px solid #6d7875;
+      background: #e0e1d8;
+      cursor: pointer;
+      font-size: .49rem;
+      font-weight: 800;
+      text-align: left;
+    }
+    .task-button:hover { background: #eef0e7; }
+    .task-button.active { color: white; border-color: var(--navy); background: var(--navy-2); }
+    .task-button.minimized { color: var(--ink-soft); background: #c8cdc7; }
+    .task-code { display: grid; place-items: center; height: 20px; border: 1px solid currentColor; font-size: .42rem; }
+    .task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .desk-actions { display: flex; align-items: center; gap: 5px; padding: 5px 7px 5px 0; }
+    .desk-action {
+      height: 32px;
+      padding: 0 9px;
+      border: 1px solid #6d7875;
+      background: var(--paper);
+      cursor: pointer;
+      font-size: .48rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .desk-action:hover { background: #f7f5ec; }
+    .save-indicator { min-width: 66px; color: var(--ink-soft); font-size: .45rem; text-align: right; }
+
+    .app-toolbar {
+      min-height: 33px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 7px;
+      border-bottom: 1px solid #8e9690;
+      background: #d8d9d0;
+    }
+    .tool-button {
+      min-height: 22px;
+      padding: 2px 6px;
+      border: 1px solid #657270;
+      background: #edede5;
+      font-size: .47rem;
+      font-weight: 800;
+    }
+    .tool-button.selected { color: white; background: var(--blue); }
+    .tool-spacer { flex: 1; }
+    .tool-readout { color: var(--ink-soft); font-size: .45rem; }
+
+    .designer-layout { min-height: 100%; display: grid; grid-template-columns: 116px minmax(0, 1fr); }
+    .component-rail { padding: 8px; border-right: 1px solid #818c88; background: #d4d5cc; }
+    .rail-label { margin: 0 0 7px; color: var(--ink-soft); font-size: .46rem; font-weight: 900; letter-spacing: .07em; }
+    .component-chip {
+      width: 100%;
+      display: grid;
+      grid-template-columns: 18px minmax(0, 1fr);
+      align-items: center;
+      gap: 5px;
+      margin: 0 0 5px;
+      padding: 5px;
+      border: 1px solid #75807c;
+      background: #ecebe2;
+      font-size: .45rem;
+      font-weight: 800;
+      text-align: left;
+    }
+    .component-cell { width: 15px; height: 15px; border: 1px solid #33464c; background: var(--orange); }
+    .component-cell.wall { background: #364e58; }
+    .component-chip.disabled { opacity: .48; }
+    .work-grid {
+      position: relative;
+      min-width: 0;
+      min-height: 250px;
+      overflow: hidden;
+      background-color: #253a43;
+      background-image:
+        linear-gradient(rgb(218 231 230 / 13%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(218 231 230 / 13%) 1px, transparent 1px);
+      background-size: 18px 18px;
+    }
+    .work-grid::before {
+      content: "DESIGN SURFACE / CONTENT DEFERRED";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgb(222 235 233 / 35%);
+      font-size: .58rem;
+      font-weight: 900;
+      letter-spacing: .08em;
+    }
+    .port { position: absolute; width: 24px; height: 24px; border: 2px solid #f0cfad; background: var(--orange); }
+    .port.source { left: 18%; top: 14%; }
+    .port.sink { right: 15%; bottom: 18%; background: var(--green); border-color: #c2e3d5; }
+    .ghost-path { position: absolute; left: 20%; top: 22%; width: 60%; height: 55%; border-left: 3px solid rgb(225 145 89 / 45%); border-bottom: 3px solid rgb(225 145 89 / 45%); transform: skewX(-20deg); }
+
+    .manual-page { min-height: 100%; padding: 11px 13px 18px; background: #ede7d8; }
+    .manual-kicker { color: #776550; font-size: .45rem; font-weight: 900; letter-spacing: .09em; }
+    .manual-page h2 { margin: 5px 0 4px; font-size: .8rem; line-height: 1.1; }
+    .manual-rule { height: 3px; margin: 7px 0 10px; background: var(--orange); }
+    .manual-columns { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 11px; }
+    .manual-page p { margin: 0 0 8px; font-size: .5rem; line-height: 1.55; }
+    .diagram-box { min-height: 104px; display: grid; place-items: center; border: 1px solid #796f62; background: #e3dbc8; }
+    .diagram-orbit { position: relative; width: 66px; height: 66px; border: 1px solid #6c6254; border-radius: 50%; }
+    .diagram-orbit::before, .diagram-orbit::after { content: ""; position: absolute; inset: 14px; border: 1px solid #8d6244; transform: rotate(45deg); }
+    .diagram-orbit::after { inset: 26px; background: var(--orange); border: 0; }
+    .parameter-table { width: 100%; border-collapse: collapse; font-size: .46rem; }
+    .parameter-table th, .parameter-table td { padding: 4px 5px; border: 1px solid #8d8576; text-align: left; }
+    .parameter-table th { background: #dad1bd; }
+
+    .contract-sheet { min-height: 100%; padding: 11px; background: #e8ece7; }
+    .contract-id { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .contract-number { padding: 4px 6px; color: white; background: var(--green); font-size: .52rem; font-weight: 900; }
+    .contract-title { font-size: .67rem; font-weight: 900; }
+    .contract-copy { margin: 0 0 10px; color: var(--ink-soft); font-size: .5rem; line-height: 1.45; }
+    .requirement { display: grid; grid-template-columns: 17px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-top: 1px solid #98a19a; font-size: .48rem; }
+    .requirement::before { content: ""; width: 11px; height: 11px; margin-top: 1px; border: 1px solid var(--green); background: #f5f4e9; }
+
+    .trace-view { min-height: 100%; padding: 9px; background: #222f35; color: #d8e0de; }
+    .trace-row { display: grid; grid-template-columns: 38px 1fr 42px; align-items: center; gap: 7px; margin: 0 0 5px; font-size: .43rem; }
+    .trace-track { height: 9px; border: 1px solid #61747a; background: #17242a; }
+    .trace-fill { height: 100%; background: #d0713c; }
+    .trace-row:nth-child(2n) .trace-fill { background: #538b7c; }
+    .trace-alert { margin-top: 9px; padding: 7px; border: 1px solid #be7655; background: rgb(155 61 39 / 19%); color: #f0b28f; font-size: .47rem; line-height: 1.45; }
+
+    .notes-view { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #ece9be; }
+    .notes-strip { padding: 6px 8px; border-bottom: 1px solid #8e8a5e; color: #686231; font-size: .46rem; }
+    .notes-area { width: 100%; height: 100%; min-height: 110px; resize: none; padding: 10px; border: 0; background: transparent; color: #39371f; font-size: .55rem; line-height: 1.6; }
+
+    .archive-view { min-height: 100%; padding: 9px; background: #e5e6e1; }
+    .snapshot-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 7px; padding: 7px 4px; border-bottom: 1px solid #a5aaa4; font-size: .46rem; }
+    .snapshot-icon { width: 26px; height: 24px; display: grid; place-items: center; border: 1px solid #5c696b; background: #d4d8da; font-weight: 900; }
+    .snapshot-row strong { display: block; font-size: .49rem; }
+    .snapshot-row small { color: var(--ink-soft); font-size: .42rem; }
+    .snapshot-row button { padding: 3px 5px; border: 1px solid #687473; background: #f1f0e8; font-size: .42rem; }
+
+    .toast {
+      position: absolute;
+      z-index: 10000;
+      right: 12px;
+      bottom: 12px;
+      max-width: 300px;
+      padding: 8px 10px;
+      color: white;
+      border: 1px solid #071b23;
+      background: var(--navy);
+      box-shadow: 4px 4px 0 rgb(10 27 33 / 28%);
+      font-size: .5rem;
+      line-height: 1.4;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 120ms linear, transform 120ms linear;
+      pointer-events: none;
+    }
+    .toast.visible { opacity: 1; transform: translateY(0); }
+
+    @media (max-width: 900px) {
+      :root { --dock: 64px; }
+      .launch-button { width: 50px; min-height: 55px; }
+      .launch-name { max-width: 50px; }
+      .system-context { display: none; }
+      .desk-actions .desk-action:first-of-type { display: none; }
+      .save-indicator { display: none; }
+    }
+
+    @media (max-width: 620px) {
+      :root { --topbar: 34px; --shelf: 44px; --dock: 52px; }
+      .system-title { font-size: .56rem; }
+      .system-status span:last-child { display: none; }
+      .launcher { padding: 5px 3px; }
+      .launcher-label { display: none; }
+      .launch-button { width: 44px; min-height: 48px; margin-bottom: 3px; }
+      .launch-icon { width: 25px; height: 25px; }
+      .launch-name { display: none; }
+      .task-button { min-width: 42px; max-width: 44px; grid-template-columns: 1fr; padding: 4px; }
+      .task-name { display: none; }
+      .desk-actions .desk-action { padding: 0 6px; }
+      .desk-actions .desk-action:nth-of-type(2) { display: none; }
+      .app-window { min-width: 230px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="workstation">
+    <header class="system-bar">
+      <div class="hcw-mark">HC</div>
+      <div class="system-title">HENRY CONTROL WORKS</div>
+      <div class="system-context">RESEARCH DESK / WORKSPACE LAYOUT STUDY</div>
+      <div class="system-spacer"></div>
+      <div class="system-status"><i class="status-dot"></i><span>LOCAL SESSION</span><span id="clock">00:00:00</span></div>
+    </header>
+
+    <section class="desktop-region">
+      <nav class="launcher" aria-label="Applications">
+        <div class="launcher-label">OPEN</div>
+        <button class="launch-button" data-app="designer" title="Open Designer"><span class="launch-icon">DS</span><span class="launch-name">DESIGNER</span></button>
+        <button class="launch-button" data-app="manual" title="Open Component Manual"><span class="launch-icon">MN</span><span class="launch-name">MANUAL</span></button>
+        <button class="launch-button" data-app="contract" title="Open Contract"><span class="launch-icon">CT</span><span class="launch-name">CONTRACT</span></button>
+        <button class="launch-button" data-app="trace" title="Open Test Trace"><span class="launch-icon">TR</span><span class="launch-name">TRACE</span></button>
+        <button class="launch-button" data-app="notes" title="Open Notes"><span class="launch-icon">NT</span><span class="launch-name">NOTES</span></button>
+        <button class="launch-button" data-app="archive" title="Open Workspace Archive"><span class="launch-icon">AR</span><span class="launch-name">ARCHIVE</span></button>
+      </nav>
+
+      <div class="desktop-plane" id="desktop" aria-label="Movable application workspace">
+        <div class="desktop-stamp">WINDOW LAYOUT PROTOTYPE<strong>DESK 03</strong></div>
+        <div class="snap-preview" id="snap-preview"></div>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <footer class="shelf">
+      <div class="desk-menu">DESK 03</div>
+      <div class="task-list" id="task-list" aria-label="Open windows"></div>
+      <div class="desk-actions">
+        <span class="save-indicator" id="save-indicator">NOT SAVED</span>
+        <button class="desk-action" id="clean-desk">CLEAN DESK</button>
+        <button class="desk-action" id="save-layout">SAVE LAYOUT</button>
+      </div>
+    </footer>
+  </main>
+
+  <template id="designer-content">
+    <div class="app-toolbar">
+      <button class="tool-button selected">SELECT</button>
+      <button class="tool-button">PLACE</button>
+      <button class="tool-button">WIRE</button>
+      <span class="tool-spacer"></span>
+      <span class="tool-readout">GRID 36 × 24 / PAUSED</span>
+    </div>
+    <div class="designer-layout">
+      <aside class="component-rail">
+        <div class="rail-label">COMPONENTS</div>
+        <button class="component-chip"><span class="component-cell"></span><span>FALLING CELL</span></button>
+        <button class="component-chip"><span class="component-cell wall"></span><span>FIXED CELL</span></button>
+        <button class="component-chip disabled"><span class="component-cell"></span><span>MODIFIER</span></button>
+      </aside>
+      <div class="work-grid">
+        <div class="port source" title="Source placeholder"></div>
+        <div class="port sink" title="Sink placeholder"></div>
+        <div class="ghost-path"></div>
+      </div>
+    </div>
+  </template>
+
+  <template id="manual-content">
+    <div class="app-toolbar">
+      <button class="tool-button">◀</button><button class="tool-button">▶</button>
+      <span class="tool-readout">COMPONENT REFERENCE / 04 OF 28</span>
+      <span class="tool-spacer"></span><button class="tool-button">INDEX</button>
+    </div>
+    <article class="manual-page">
+      <div class="manual-kicker">HCW TECHNICAL PUBLICATION 7-C</div>
+      <h2>FALLING CELL / TYPE FC-01</h2>
+      <div class="manual-rule"></div>
+      <div class="manual-columns">
+        <div>
+          <p>The cell evaluates its local direction once per update. If the forward cell is vacant, the cell advances one position.</p>
+          <table class="parameter-table">
+            <tr><th>PROPERTY</th><th>VALUE</th></tr>
+            <tr><td>Neighborhood</td><td>3 × 3 local</td></tr>
+            <tr><td>Update phase</td><td>Transport</td></tr>
+            <tr><td>Default direction</td><td>Down</td></tr>
+          </table>
+        </div>
+        <div class="diagram-box"><div class="diagram-orbit"></div></div>
+      </div>
+    </article>
+  </template>
+
+  <template id="contract-content">
+    <div class="app-toolbar"><span class="tool-readout">ACTIVE CONTRACT</span><span class="tool-spacer"></span><button class="tool-button">SUBMIT DESIGN</button></div>
+    <section class="contract-sheet">
+      <div class="contract-id"><span class="contract-number">HC-001</span><span class="contract-title">GRAVITY FEED CALIBRATION</span></div>
+      <p class="contract-copy">Deliver material from the assigned source to the collection port under the supplied test schedule.</p>
+      <div class="requirement">Use only components approved in Appendix A</div>
+      <div class="requirement">Maintain collection flow for the full trial</div>
+      <div class="requirement">Submit a saved design, not a paused simulation</div>
+    </section>
+  </template>
+
+  <template id="trace-content">
+    <div class="app-toolbar"><button class="tool-button">RUN 006</button><span class="tool-readout">TICKS 000–600</span><span class="tool-spacer"></span><button class="tool-button">PIN</button></div>
+    <section class="trace-view">
+      <div class="trace-row"><span>000–120</span><div class="trace-track"><div class="trace-fill" style="width:92%"></div></div><span>23 CELLS</span></div>
+      <div class="trace-row"><span>121–240</span><div class="trace-track"><div class="trace-fill" style="width:76%"></div></div><span>19 CELLS</span></div>
+      <div class="trace-row"><span>241–360</span><div class="trace-track"><div class="trace-fill" style="width:54%"></div></div><span>13 CELLS</span></div>
+      <div class="trace-row"><span>361–480</span><div class="trace-track"><div class="trace-fill" style="width:18%"></div></div><span>04 CELLS</span></div>
+      <div class="trace-alert">FLOW LOST AT TICK 418 / TRACE CONTENT IS A PLACEHOLDER FOR LAYOUT TESTING</div>
+    </section>
+  </template>
+
+  <template id="notes-content">
+    <div class="notes-view">
+      <div class="notes-strip">LOCAL NOTE / SAVED WITH WORKSPACE</div>
+      <textarea class="notes-area" spellcheck="false">Check the sink edge case in manual §4.3.
+
+Compare variant B after the next test.</textarea>
+    </div>
+  </template>
+
+  <template id="archive-content">
+    <div class="app-toolbar"><span class="tool-readout">WORKSPACE SNAPSHOTS</span><span class="tool-spacer"></span><button class="tool-button" data-action="save-layout">NEW SNAPSHOT</button></div>
+    <section class="archive-view">
+      <div class="snapshot-row"><span class="snapshot-icon">01</span><span><strong>CURRENT DESK</strong><small>Window positions, pages, selections, and notes</small></span><button data-action="save-layout">SAVE</button></div>
+      <div class="snapshot-row"><span class="snapshot-icon">A4</span><span><strong>FLOW ROUTE B</strong><small>Today / 18:42 / 5 windows</small></span><button disabled>LOAD</button></div>
+      <div class="snapshot-row"><span class="snapshot-icon">A3</span><span><strong>FIRST PASS</strong><small>Today / 18:05 / 3 windows</small></span><button disabled>LOAD</button></div>
+    </section>
+  </template>
+
+  <script>
+    (() => {
+      const desktop = document.querySelector('#desktop');
+      const taskList = document.querySelector('#task-list');
+      const snapPreview = document.querySelector('#snap-preview');
+      const toast = document.querySelector('#toast');
+      const saveIndicator = document.querySelector('#save-indicator');
+      const STORAGE_KEY = 'hcw-workspace-layout-v1';
+      const GRID = 9;
+      let zCounter = 20;
+      let activeId = null;
+      let toastTimer = null;
+      const listeners = new Map();
+
+      const apps = {
+        designer: { code: 'DS', title: 'SYSTEM DESIGNER', subtitle: 'UNSAVED DESIGN / ROUTE A', template: 'designer-content', x: 34, y: 28, w: 690, h: 510, minW: 430, minH: 310 },
+        manual: { code: 'MN', title: 'COMPONENT MANUAL', subtitle: 'REFERENCE 7-C', template: 'manual-content', x: 750, y: 44, w: 390, h: 390, minW: 300, minH: 260 },
+        contract: { code: 'CT', title: 'CONTRACT HC-001', subtitle: 'REQUIREMENTS', template: 'contract-content', x: 760, y: 460, w: 420, h: 260, minW: 310, minH: 210 },
+        trace: { code: 'TR', title: 'TEST TRACE', subtitle: 'RUN 006 / FAILED', template: 'trace-content', x: 220, y: 400, w: 470, h: 265, minW: 340, minH: 210 },
+        notes: { code: 'NT', title: 'FIELD NOTES', subtitle: 'LOCAL DOCUMENT', template: 'notes-content', x: 560, y: 130, w: 310, h: 255, minW: 250, minH: 190 },
+        archive: { code: 'AR', title: 'WORKSPACE ARCHIVE', subtitle: 'SNAPSHOTS', template: 'archive-content', x: 450, y: 200, w: 440, h: 285, minW: 340, minH: 230 },
+      };
+
+      const state = Object.fromEntries(Object.keys(apps).map((id) => [id, {
+        open: false,
+        minimized: false,
+        maximized: false,
+        x: apps[id].x,
+        y: apps[id].y,
+        w: apps[id].w,
+        h: apps[id].h,
+        z: 1,
+        restore: null,
+      }]));
+
+      function planeSize() {
+        const rect = desktop.getBoundingClientRect();
+        return { width: rect.width, height: rect.height };
+      }
+
+      function snap(value) { return Math.round(value / GRID) * GRID; }
+      function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+
+      function clampRect(id, rect) {
+        const size = planeSize();
+        const app = apps[id];
+        const w = clamp(rect.w, Math.min(app.minW, size.width), Math.max(Math.min(app.minW, size.width), size.width));
+        const h = clamp(rect.h, Math.min(app.minH, size.height), Math.max(Math.min(app.minH, size.height), size.height));
+        return {
+          x: clamp(rect.x, 0, Math.max(0, size.width - w)),
+          y: clamp(rect.y, 0, Math.max(0, size.height - h)),
+          w,
+          h,
+        };
+      }
+
+      function setRect(id, rect) {
+        const next = clampRect(id, rect);
+        Object.assign(state[id], next);
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        element.style.left = `${next.x}px`;
+        element.style.top = `${next.y}px`;
+        element.style.width = `${next.w}px`;
+        element.style.height = `${next.h}px`;
+      }
+
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('visible');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('visible'), 1800);
+      }
+
+      function publish(topic, payload = {}, source = 'workspace') {
+        const detail = { topic, payload, source, time: Date.now() };
+        desktop.dispatchEvent(new CustomEvent('workspace-message', { detail }));
+        for (const callback of listeners.get(topic) || []) callback(detail);
+        return detail;
+      }
+
+      function subscribe(topic, callback) {
+        if (!listeners.has(topic)) listeners.set(topic, new Set());
+        listeners.get(topic).add(callback);
+        return () => listeners.get(topic)?.delete(callback);
+      }
+
+      function focusWindow(id) {
+        if (!state[id].open || state[id].minimized) return;
+        activeId = id;
+        zCounter += 1;
+        state[id].z = zCounter;
+        document.querySelectorAll('.app-window').forEach((windowElement) => {
+          const windowId = windowElement.dataset.window;
+          windowElement.classList.toggle('active', windowId === id);
+          windowElement.style.zIndex = state[windowId].z;
+        });
+        renderTasks();
+      }
+
+      function makeWindow(id) {
+        const app = apps[id];
+        const element = document.createElement('section');
+        element.className = 'app-window';
+        element.dataset.window = id;
+        element.setAttribute('role', 'dialog');
+        element.setAttribute('aria-label', app.title);
+        element.innerHTML = `
+          <header class="titlebar">
+            <span class="window-code">${app.code}</span>
+            <span class="window-heading"><strong>${app.title}</strong><small>${app.subtitle}</small></span>
+            <span class="window-controls">
+              <button class="window-control" data-window-action="minimize" aria-label="Minimize ${app.title}">_</button>
+              <button class="window-control" data-window-action="maximize" aria-label="Maximize ${app.title}">□</button>
+              <button class="window-control close" data-window-action="close" aria-label="Close ${app.title}">×</button>
+            </span>
+          </header>
+          <div class="window-body"></div>
+          <footer class="window-footer"><span>${app.code} APPLICATION</span><span>READY</span></footer>
+          <div class="resize-handle" aria-hidden="true"></div>`;
+        const template = document.querySelector(`#${app.template}`);
+        element.querySelector('.window-body').append(template.content.cloneNode(true));
+        desktop.append(element);
+
+        element.addEventListener('pointerdown', () => focusWindow(id));
+        element.querySelector('.titlebar').addEventListener('dblclick', (event) => {
+          if (!event.target.closest('button')) toggleMaximize(id);
+        });
+        element.querySelectorAll('[data-window-action]').forEach((button) => {
+          button.addEventListener('click', (event) => {
+            event.stopPropagation();
+            const action = button.dataset.windowAction;
+            if (action === 'minimize') minimizeWindow(id);
+            if (action === 'maximize') toggleMaximize(id);
+            if (action === 'close') closeWindow(id);
+          });
+        });
+        element.querySelectorAll('[data-action="save-layout"]').forEach((button) => button.addEventListener('click', saveLayout));
+        installDrag(id, element);
+        installResize(id, element);
+        return element;
+      }
+
+      function openWindow(id) {
+        if (!apps[id]) return;
+        let element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) element = makeWindow(id);
+        state[id].open = true;
+        state[id].minimized = false;
+        element.hidden = false;
+        element.classList.toggle('maximized', state[id].maximized);
+        if (state[id].maximized) maximizeToPlane(id);
+        else setRect(id, state[id]);
+        focusWindow(id);
+        renderLaunchers();
+        renderTasks();
+        publish('window:opened', { id }, id);
+      }
+
+      function minimizeWindow(id) {
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        state[id].minimized = true;
+        element.hidden = true;
+        if (activeId === id) {
+          activeId = [...Object.keys(state)]
+            .filter((key) => state[key].open && !state[key].minimized && key !== id)
+            .sort((a, b) => state[b].z - state[a].z)[0] || null;
+          if (activeId) focusWindow(activeId);
+        }
+        renderTasks();
+        publish('window:minimized', { id }, id);
+      }
+
+      function closeWindow(id) {
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        state[id].open = false;
+        state[id].minimized = false;
+        element.remove();
+        if (activeId === id) activeId = null;
+        renderLaunchers();
+        renderTasks();
+        publish('window:closed', { id }, id);
+      }
+
+      function maximizeToPlane(id) {
+        const size = planeSize();
+        setRect(id, { x: 0, y: 0, w: size.width, h: size.height });
+      }
+
+      function toggleMaximize(id) {
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        if (!state[id].maximized) {
+          state[id].restore = { x: state[id].x, y: state[id].y, w: state[id].w, h: state[id].h };
+          state[id].maximized = true;
+          element.classList.add('maximized');
+          maximizeToPlane(id);
+        } else {
+          state[id].maximized = false;
+          element.classList.remove('maximized');
+          setRect(id, state[id].restore || apps[id]);
+          state[id].restore = null;
+        }
+        focusWindow(id);
+        renderTasks();
+        publish('window:maximized', { id, maximized: state[id].maximized }, id);
+      }
+
+      function snapZone(clientX, clientY) {
+        const rect = desktop.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        if (y <= 16) return 'full';
+        if (x <= 16) return 'left';
+        if (x >= rect.width - 16) return 'right';
+        return null;
+      }
+
+      function previewZone(zone) {
+        if (!zone) {
+          snapPreview.classList.remove('visible');
+          return;
+        }
+        const size = planeSize();
+        const rects = {
+          full: { x: 5, y: 5, w: size.width - 10, h: size.height - 10 },
+          left: { x: 5, y: 5, w: size.width / 2 - 8, h: size.height - 10 },
+          right: { x: size.width / 2 + 3, y: 5, w: size.width / 2 - 8, h: size.height - 10 },
+        };
+        const rect = rects[zone];
+        Object.assign(snapPreview.style, { left: `${rect.x}px`, top: `${rect.y}px`, width: `${rect.w}px`, height: `${rect.h}px` });
+        snapPreview.classList.add('visible');
+      }
+
+      function applySnap(id, zone) {
+        const size = planeSize();
+        state[id].maximized = zone === 'full';
+        const element = document.querySelector(`[data-window="${id}"]`);
+        element.classList.toggle('maximized', zone === 'full');
+        if (zone === 'full') setRect(id, { x: 0, y: 0, w: size.width, h: size.height });
+        if (zone === 'left') setRect(id, { x: 0, y: 0, w: size.width / 2, h: size.height });
+        if (zone === 'right') setRect(id, { x: size.width / 2, y: 0, w: size.width / 2, h: size.height });
+        publish('window:snapped', { id, zone }, id);
+      }
+
+      function installDrag(id, element) {
+        const titlebar = element.querySelector('.titlebar');
+        titlebar.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0 || event.target.closest('button') || state[id].maximized) return;
+          event.preventDefault();
+          focusWindow(id);
+          titlebar.setPointerCapture(event.pointerId);
+          const start = { clientX: event.clientX, clientY: event.clientY, x: state[id].x, y: state[id].y };
+          let zone = null;
+
+          const move = (moveEvent) => {
+            const rect = clampRect(id, {
+              x: start.x + moveEvent.clientX - start.clientX,
+              y: start.y + moveEvent.clientY - start.clientY,
+              w: state[id].w,
+              h: state[id].h,
+            });
+            setRect(id, rect);
+            zone = snapZone(moveEvent.clientX, moveEvent.clientY);
+            previewZone(zone);
+          };
+          const up = () => {
+            titlebar.removeEventListener('pointermove', move);
+            titlebar.removeEventListener('pointerup', up);
+            titlebar.removeEventListener('pointercancel', up);
+            snapPreview.classList.remove('visible');
+            if (zone) applySnap(id, zone);
+            else setRect(id, { x: snap(state[id].x), y: snap(state[id].y), w: state[id].w, h: state[id].h });
+            publish('window:moved', { id, rect: { ...state[id] } }, id);
+          };
+          titlebar.addEventListener('pointermove', move);
+          titlebar.addEventListener('pointerup', up);
+          titlebar.addEventListener('pointercancel', up);
+        });
+      }
+
+      function installResize(id, element) {
+        const handle = element.querySelector('.resize-handle');
+        handle.addEventListener('pointerdown', (event) => {
+          if (event.button !== 0 || state[id].maximized) return;
+          event.preventDefault();
+          event.stopPropagation();
+          focusWindow(id);
+          handle.setPointerCapture(event.pointerId);
+          const start = { clientX: event.clientX, clientY: event.clientY, w: state[id].w, h: state[id].h };
+          const move = (moveEvent) => {
+            setRect(id, {
+              x: state[id].x,
+              y: state[id].y,
+              w: snap(start.w + moveEvent.clientX - start.clientX),
+              h: snap(start.h + moveEvent.clientY - start.clientY),
+            });
+          };
+          const up = () => {
+            handle.removeEventListener('pointermove', move);
+            handle.removeEventListener('pointerup', up);
+            handle.removeEventListener('pointercancel', up);
+            publish('window:resized', { id, rect: { ...state[id] } }, id);
+          };
+          handle.addEventListener('pointermove', move);
+          handle.addEventListener('pointerup', up);
+          handle.addEventListener('pointercancel', up);
+        });
+      }
+
+      function renderLaunchers() {
+        document.querySelectorAll('.launch-button').forEach((button) => {
+          button.dataset.open = String(state[button.dataset.app].open);
+        });
+      }
+
+      function renderTasks() {
+        taskList.innerHTML = '';
+        Object.keys(apps).filter((id) => state[id].open).sort((a, b) => state[a].z - state[b].z).forEach((id) => {
+          const button = document.createElement('button');
+          button.className = 'task-button';
+          button.classList.toggle('active', id === activeId && !state[id].minimized);
+          button.classList.toggle('minimized', state[id].minimized);
+          button.innerHTML = `<span class="task-code">${apps[id].code}</span><span class="task-name">${apps[id].title}</span>`;
+          button.addEventListener('click', () => {
+            if (state[id].minimized) openWindow(id);
+            else if (activeId === id) minimizeWindow(id);
+            else focusWindow(id);
+          });
+          taskList.append(button);
+        });
+      }
+
+      function cleanDesk(options = {}) {
+        const announce = options.announce ?? true;
+        const size = planeSize();
+        const margin = 14;
+        const gap = 12;
+        const sideW = clamp(Math.round(size.width * .31), 300, 410);
+        const mainW = Math.max(430, size.width - sideW - margin * 2 - gap);
+        const mainH = Math.max(320, size.height - margin * 2);
+        const sideH = Math.max(190, (size.height - margin * 2 - gap) / 2);
+        const placements = size.width < 760 ? {
+          designer: { x: 8, y: 8, w: size.width - 16, h: size.height - 16 },
+        } : {
+          designer: { x: margin, y: margin, w: mainW, h: mainH },
+          manual: { x: margin + mainW + gap, y: margin, w: sideW, h: sideH },
+          contract: { x: margin + mainW + gap, y: margin + sideH + gap, w: sideW, h: sideH },
+        };
+        Object.keys(apps).filter((id) => state[id].open).forEach((id) => {
+          const element = document.querySelector(`[data-window="${id}"]`);
+          state[id].maximized = false;
+          element.classList.remove('maximized');
+          state[id].minimized = !placements[id];
+          element.hidden = state[id].minimized;
+          if (placements[id]) setRect(id, placements[id]);
+        });
+        const focusId = state.designer.open ? 'designer' : Object.keys(apps).find((id) => state[id].open);
+        if (focusId) focusWindow(focusId);
+        renderTasks();
+        if (announce) {
+          showToast('Core windows arranged; supporting windows minimized');
+          publish('workspace:cleaned', {}, 'workspace');
+        }
+      }
+
+      function serializableState() {
+        return Object.fromEntries(Object.entries(state).map(([id, value]) => [id, {
+          open: value.open,
+          minimized: value.minimized,
+          maximized: value.maximized,
+          x: value.x,
+          y: value.y,
+          w: value.w,
+          h: value.h,
+          z: value.z,
+          restore: value.restore,
+        }]));
+      }
+
+      function saveLayout() {
+        const payload = { version: 1, activeId, zCounter, state: serializableState(), savedAt: new Date().toISOString() };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        saveIndicator.textContent = 'SAVED NOW';
+        showToast('Workspace layout saved locally');
+        publish('workspace:saved', payload, 'archive');
+        setTimeout(() => { saveIndicator.textContent = 'LAYOUT SAVED'; }, 1200);
+        return payload;
+      }
+
+      function restoreLayout() {
+        let payload = null;
+        try { payload = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { payload = null; }
+        if (!payload?.state) return false;
+        Object.entries(payload.state).forEach(([id, value]) => {
+          if (!apps[id]) return;
+          Object.assign(state[id], value);
+          zCounter = Math.max(zCounter, value.z || 1);
+          if (value.open) {
+            openWindow(id);
+            state[id].minimized = Boolean(value.minimized);
+            const element = document.querySelector(`[data-window="${id}"]`);
+            if (element) element.hidden = state[id].minimized;
+          }
+        });
+        if (payload.activeId && state[payload.activeId]?.open && !state[payload.activeId].minimized) focusWindow(payload.activeId);
+        saveIndicator.textContent = 'LAYOUT RESTORED';
+        return true;
+      }
+
+      function handleResize() {
+        const size = planeSize();
+        const visible = Object.keys(state).filter((id) => state[id].open && !state[id].minimized);
+        const needsReflow = visible.some((id) => state[id].x + state[id].w > size.width || state[id].y + state[id].h > size.height);
+        if (needsReflow && state.designer.open) {
+          cleanDesk({ announce: false });
+          return;
+        }
+        Object.keys(state).forEach((id) => {
+          if (!state[id].open || state[id].minimized) return;
+          if (state[id].maximized) maximizeToPlane(id);
+          else setRect(id, state[id]);
+        });
+      }
+
+      document.querySelectorAll('.launch-button').forEach((button) => button.addEventListener('click', () => openWindow(button.dataset.app)));
+      document.querySelector('#clean-desk').addEventListener('click', cleanDesk);
+      document.querySelector('#save-layout').addEventListener('click', saveLayout);
+      window.addEventListener('resize', handleResize);
+      setInterval(() => { document.querySelector('#clock').textContent = new Date().toLocaleTimeString('en-GB'); }, 1000);
+      document.querySelector('#clock').textContent = new Date().toLocaleTimeString('en-GB');
+
+      window.WorkspaceBridge = Object.freeze({ open: openWindow, publish, subscribe, save: saveLayout, getLayout: serializableState });
+      window.__workspaceDebug = {
+        getState: () => ({ activeId, zCounter, windows: serializableState() }),
+        open: openWindow,
+        minimize: minimizeWindow,
+        close: closeWindow,
+        maximize: toggleMaximize,
+        clean: cleanDesk,
+        save: saveLayout,
+        restore: restoreLayout,
+        publish,
+        setRect,
+      };
+
+      if (!restoreLayout()) {
+        openWindow('designer');
+        openWindow('manual');
+        openWindow('contract');
+        cleanDesk({ announce: false });
+      }
+      renderLaunchers();
+      renderTasks();
+    })();
+  </script>
+</body>
+</html>
