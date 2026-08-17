@@ -28,7 +28,6 @@
       --shadow: rgb(21 32 36 / 28%);
       --grid: rgb(37 57 63 / 12%);
       --topbar: 38px;
-      --shelf: 46px;
       --dock: 76px;
       font-family: "SFMono-Regular", "Berkeley Mono", Consolas, "Liberation Mono", monospace;
       font-size: 16px;
@@ -45,7 +44,7 @@
     .workstation {
       height: 100%;
       display: grid;
-      grid-template-rows: var(--topbar) minmax(0, 1fr) var(--shelf);
+      grid-template-rows: var(--topbar) minmax(0, 1fr);
       background: var(--desktop);
     }
 
@@ -228,12 +227,14 @@
     .app-window.active { border-color: #0c2d3a; box-shadow: none; }
     .app-window[data-app="designer"] { box-shadow: 7px 8px 0 var(--shadow); }
     .app-window[data-app="designer"].active { box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
+    .app-window[data-app="palette"] { box-shadow: 7px 8px 0 var(--shadow); }
+    .app-window[data-app="palette"].active { box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
     .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"] {
       border-right: 0;
-      box-shadow: none;
+      box-shadow: 0 8px 0 var(--shadow);
     }
     .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"].active {
-      box-shadow: none;
+      box-shadow: 0 10px 0 rgb(18 42 50 / 35%);
     }
     .app-window[data-app="designer"][data-palette-docked="true"][data-palette-side="right"] {
       border-right: 0;
@@ -323,65 +324,6 @@
       background: repeating-linear-gradient(135deg, transparent 0 3px, #63706e 3px 4px);
       clip-path: polygon(100% 0, 100% 100%, 0 100%);
     }
-    .shelf {
-      min-width: 0;
-      display: grid;
-      grid-template-columns: 76px minmax(0, 1fr) auto;
-      align-items: center;
-      border-top: 1px solid var(--line-dark);
-      background: #c4cac3;
-      box-shadow: 0 2px 0 rgb(255 255 255 / 55%) inset;
-    }
-    .desk-menu {
-      align-self: stretch;
-      display: grid;
-      place-items: center;
-      border: 0;
-      border-right: 1px solid var(--line-dark);
-      background: var(--navy);
-      color: white;
-      font-size: .55rem;
-      font-weight: 900;
-      letter-spacing: .08em;
-      cursor: default;
-    }
-    .task-list { min-width: 0; display: flex; align-items: center; gap: 5px; padding: 5px 7px; overflow-x: auto; }
-    .task-button {
-      max-width: 164px;
-      min-width: 88px;
-      height: 34px;
-      display: grid;
-      grid-template-columns: 20px minmax(0, 1fr);
-      align-items: center;
-      gap: 5px;
-      padding: 0 7px 0 5px;
-      border: 1px solid #6d7875;
-      background: #e0e1d8;
-      cursor: pointer;
-      font-size: .49rem;
-      font-weight: 800;
-      text-align: left;
-    }
-    .task-button:hover { background: #eef0e7; }
-    .task-button.active { color: white; border-color: var(--navy); background: var(--navy-2); }
-    .task-button.minimized { color: var(--ink-soft); background: #c8cdc7; }
-    .task-button.pinned .task-code { color: white; border-color: var(--orange); background: var(--orange); }
-    .task-code { display: grid; place-items: center; height: 20px; border: 1px solid currentColor; font-size: .42rem; }
-    .task-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .desk-actions { display: flex; align-items: center; gap: 5px; padding: 5px 7px 5px 0; }
-    .desk-action {
-      height: 32px;
-      padding: 0 9px;
-      border: 1px solid #6d7875;
-      background: var(--paper);
-      cursor: pointer;
-      font-size: .48rem;
-      font-weight: 800;
-      white-space: nowrap;
-    }
-    .desk-action:hover { background: #f7f5ec; }
-    .save-indicator { min-width: 66px; color: var(--ink-soft); font-size: .45rem; text-align: right; }
-
     .app-toolbar {
       min-height: 33px;
       display: flex;
@@ -668,12 +610,10 @@
       .minimized-name { display: none; }
       .launch-name { max-width: 50px; }
       .system-context { display: none; }
-      .desk-actions .desk-action:first-of-type { display: none; }
-      .save-indicator { display: none; }
     }
 
     @media (max-width: 620px) {
-      :root { --topbar: 34px; --shelf: 44px; --dock: 52px; }
+      :root { --topbar: 34px; --dock: 52px; }
       .system-title { font-size: .56rem; }
       .system-status span:last-child { display: none; }
       .launcher { padding: 5px 3px; }
@@ -683,10 +623,6 @@
       .launch-name { display: none; }
       .minimized-tray { margin-top: 5px; padding-top: 5px; }
       .minimized-button { width: 44px; min-height: 34px; }
-      .task-button { min-width: 42px; max-width: 44px; grid-template-columns: 1fr; padding: 4px; }
-      .task-name { display: none; }
-      .desk-actions .desk-action { padding: 0 6px; }
-      .desk-actions .desk-action:nth-of-type(2) { display: none; }
       .app-window { min-width: 230px; }
     }
   </style>
@@ -724,15 +660,6 @@
       </div>
     </section>
 
-    <footer class="shelf">
-      <div class="desk-menu">DESK 03</div>
-      <div class="task-list" id="task-list" aria-label="Open windows"></div>
-      <div class="desk-actions">
-        <span class="save-indicator" id="save-indicator">NOT SAVED</span>
-        <button class="desk-action" id="clean-desk">CLEAN DESK</button>
-        <button class="desk-action" id="save-layout">SAVE LAYOUT</button>
-      </div>
-    </footer>
   </main>
 
   <template id="designer-content">
@@ -986,8 +913,25 @@ Compare variant B after the next test.</textarea>
         };
       }
 
-      function setRect(id, rect, options = {}) {
+      function clampDockedDesignerRect(id, rect) {
         const next = clampRect(id, rect);
+        if (state[id]?.appId !== 'designer') return next;
+        const data = normalizeDesignerData(id);
+        const palette = data.paletteId ? state[data.paletteId] : null;
+        if (!data.paletteDocked || !palette?.open || palette.minimized) return next;
+        const size = planeSize();
+        const paletteSpan = palette.w + PALETTE_DOCK_GAP;
+        if (next.w + paletteSpan > size.width) return next;
+        if (data.paletteDockSide === 'left') {
+          next.x = clamp(next.x, paletteSpan, size.width - next.w);
+        } else {
+          next.x = clamp(next.x, 0, size.width - next.w - paletteSpan);
+        }
+        return next;
+      }
+
+      function setRect(id, rect, options = {}) {
+        const next = state[id]?.appId === 'designer' ? clampDockedDesignerRect(id, rect) : clampRect(id, rect);
         Object.assign(state[id], next);
         const element = document.querySelector(`[data-window="${id}"]`);
         if (!element) return;
@@ -1242,13 +1186,13 @@ Compare variant B after the next test.</textarea>
         const owner = state[designerId];
         const palette = state[paletteId];
         if (!data.paletteDocked || !owner?.open || owner.minimized || !palette?.open || palette.minimized) return;
-        const size = planeSize();
+        const fittedOwner = clampDockedDesignerRect(designerId, owner);
+        if (fittedOwner.x !== owner.x || fittedOwner.y !== owner.y || fittedOwner.w !== owner.w || fittedOwner.h !== owner.h) {
+          setRect(designerId, fittedOwner, { skipDock: true });
+        }
         const leftX = owner.x - palette.w - PALETTE_DOCK_GAP;
         const rightX = owner.x + owner.w + PALETTE_DOCK_GAP;
-        let side = data.paletteDockSide;
-        if (side === 'left' && leftX < 0 && rightX + palette.w <= size.width) side = 'right';
-        if (side === 'right' && rightX + palette.w > size.width && leftX >= 0) side = 'left';
-        data.paletteDockSide = side;
+        const side = data.paletteDockSide;
         const x = side === 'left' ? leftX : rightX;
         setRect(paletteId, { x, y: owner.y, w: palette.w, h: palette.h }, { skipDock: true });
         const ownerElement = document.querySelector(`[data-window="${designerId}"]`);
@@ -1804,6 +1748,7 @@ Compare variant B after the next test.</textarea>
       }
 
       function renderTasks() {
+        if (!taskList) return;
         taskList.innerHTML = '';
         Object.keys(state).filter((id) => state[id].open && !state[id].minimized).sort((a, b) => state[a].z - state[b].z).forEach((id) => {
           const button = document.createElement('button');
@@ -1897,10 +1842,8 @@ Compare variant B after the next test.</textarea>
       function saveLayout() {
         const payload = { version: 6, activeId, zCounter, instanceCounters: { ...instanceCounters }, state: serializableState(), savedAt: new Date().toISOString() };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-        saveIndicator.textContent = 'SAVED NOW';
         showToast('Workspace layout saved locally');
         publish('workspace:saved', payload, 'archive');
-        setTimeout(() => { saveIndicator.textContent = 'LAYOUT SAVED'; }, 1200);
         return payload;
       }
 
@@ -1945,7 +1888,7 @@ Compare variant B after the next test.</textarea>
         if (payload.activeId && state[payload.activeId]?.open && !state[payload.activeId].minimized) focusWindow(payload.activeId);
         renderLaunchers();
         renderTasks();
-        saveIndicator.textContent = 'LAYOUT RESTORED';
+        showToast('Workspace layout restored');
         return true;
       }
 
@@ -1964,8 +1907,6 @@ Compare variant B after the next test.</textarea>
       }
 
       document.querySelectorAll('.launch-button').forEach((button) => button.addEventListener('click', () => openWindow(button.dataset.app)));
-      document.querySelector('#clean-desk').addEventListener('click', cleanDesk);
-      document.querySelector('#save-layout').addEventListener('click', saveLayout);
       document.addEventListener('keydown', (event) => {
         const target = event.target;
         const isEditing = target instanceof HTMLElement && (
