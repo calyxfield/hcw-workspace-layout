@@ -1,0 +1,20 @@
+{
+  "format": "hcw-design",
+  "version": 1,
+  "contract": {
+    "id": "HC-001",
+    "name": "Gravity Feed Calibration",
+    "difficulty": "orientation",
+    "acceptanceTest": null
+  },
+  "world": {
+    "width": 1800,
+    "height": 1200,
+    "source": { "x": 380, "y": 230, "type": "falling-cell-source", "fixed": true },
+    "sink": { "x": 1380, "y": 890, "type": "collection-port", "fixed": true }
+  },
+  "approvedComponents": ["falling", "fixed"],
+  "components": [],
+  "simulation": { "running": false, "tick": 0 },
+  "note": "Starter save. The acceptance threshold remains unassigned."
+}

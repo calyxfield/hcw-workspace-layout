@@ -473,13 +473,52 @@
     .pdf-status[hidden] { display: none; }
     .pdf-open-external { color: inherit; text-decoration: none; }
 
-    .contract-sheet { min-height: 100%; padding: 11px; background: #e8ece7; }
-    .contract-id { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+    .contracts-app { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #e8ece7; }
+    .contract-catalog,
+    .contract-detail { min-height: 0; overflow: auto; padding: 10px; }
+    .contract-catalog[hidden],
+    .contract-detail[hidden] { display: none; }
+    .contract-list-label { margin: 0 0 7px; color: var(--ink-soft); font-size: .42rem; font-weight: 900; letter-spacing: .09em; }
+    .contract-card {
+      width: 100%;
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: stretch;
+      gap: 8px;
+      padding: 0;
+      border: 1px solid #6c7a72;
+      background: #f4f3e9;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: left;
+    }
+    .contract-card:hover,
+    .contract-card:focus-visible { outline: 2px solid var(--orange); outline-offset: 1px; }
+    .contract-card-code { min-width: 54px; display: grid; place-items: center; padding: 8px 6px; color: white; background: var(--green); font-size: .55rem; font-weight: 900; }
+    .contract-card-copy { min-width: 0; padding: 7px 0; }
+    .contract-card-copy strong { display: block; overflow: hidden; font-size: .56rem; text-overflow: ellipsis; white-space: nowrap; }
+    .contract-card-copy small { display: block; margin-top: 3px; color: var(--ink-soft); font-size: .42rem; line-height: 1.35; }
+    .contract-card-open { display: grid; place-items: center; padding: 0 9px; border-left: 1px solid #a5afa9; color: var(--green); font-size: .75rem; font-weight: 900; }
+    .contract-id { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
     .contract-number { padding: 4px 6px; color: white; background: var(--green); font-size: .52rem; font-weight: 900; }
     .contract-title { font-size: .67rem; font-weight: 900; }
-    .contract-copy { margin: 0 0 10px; color: var(--ink-soft); font-size: .5rem; line-height: 1.45; }
-    .requirement { display: grid; grid-template-columns: 17px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-top: 1px solid #98a19a; font-size: .48rem; }
-    .requirement::before { content: ""; width: 11px; height: 11px; margin-top: 1px; border: 1px solid var(--green); background: #f5f4e9; }
+    .contract-copy { margin: 0 0 9px; color: var(--ink-soft); font-size: .49rem; line-height: 1.45; }
+    .contract-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
+    .contract-fact { min-width: 0; padding: 6px; border-right: 1px solid #a8b0ab; background: #f4f3e9; }
+    .contract-fact:last-child { border-right: 0; }
+    .contract-fact dt { margin: 0 0 3px; color: var(--green); font-size: .39rem; font-weight: 900; letter-spacing: .08em; }
+    .contract-fact dd { margin: 0; font-size: .45rem; font-weight: 800; line-height: 1.3; }
+    .contract-package { margin-bottom: 8px; padding: 7px; border-left: 4px solid var(--orange); background: #dce2dc; }
+    .contract-package strong { display: block; margin-bottom: 4px; font-size: .45rem; }
+    .contract-package span { display: block; color: var(--ink-soft); font-size: .42rem; line-height: 1.45; }
+    .contract-actions { display: flex; align-items: center; gap: 7px; }
+    .contract-download { display: inline-flex; align-items: center; min-height: 24px; color: inherit; text-decoration: none; }
+    .contract-status { color: var(--ink-soft); font-size: .4rem; font-weight: 800; }
+    @media (max-width: 640px) {
+      .contract-facts { grid-template-columns: 1fr; }
+      .contract-fact { border-right: 0; border-bottom: 1px solid #a8b0ab; }
+      .contract-fact:last-child { border-bottom: 0; }
+    }
 
     .trace-view { min-height: 100%; padding: 9px; background: #222f35; color: #d8e0de; }
     .trace-row { display: grid; grid-template-columns: 38px 1fr 42px; align-items: center; gap: 7px; margin: 0 0 5px; font-size: .43rem; }
@@ -730,14 +769,16 @@
   </template>
 
   <template id="contract-content">
-    <div class="app-toolbar"><span class="tool-readout">ACTIVE CONTRACT</span><span class="tool-spacer"></span><button class="tool-button">SUBMIT DESIGN</button></div>
-    <section class="contract-sheet">
-      <div class="contract-id"><span class="contract-number">HC-001</span><span class="contract-title">GRAVITY FEED CALIBRATION</span></div>
-      <p class="contract-copy">Deliver material from the assigned source to the collection port under the supplied test schedule.</p>
-      <div class="requirement">Use only components approved in Appendix A</div>
-      <div class="requirement">Maintain collection flow for the full trial</div>
-      <div class="requirement">Submit a saved design, not a paused simulation</div>
-    </section>
+    <div class="contracts-app">
+      <div class="app-toolbar">
+        <button class="tool-button" data-contract-action="back" type="button" hidden>← CONTRACTS</button>
+        <span class="tool-readout" data-contract-heading>CONTRACT BOARD</span>
+        <span class="tool-spacer"></span>
+        <span class="contract-status" data-contract-status>1 AVAILABLE</span>
+      </div>
+      <section class="contract-catalog" data-contract-catalog aria-label="Available contracts"></section>
+      <section class="contract-detail" data-contract-detail hidden aria-live="polite"></section>
+    </div>
   </template>
 
   <template id="trace-content">
@@ -806,6 +847,26 @@ Compare variant B after the next test.</textarea>
       const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
       const PALETTE_DOCK_GAP = 0;
       const DEFAULT_MANUAL_PDF = 'HCW-7-Expanded-Operator-Programming-Reference.pdf';
+      const CONTRACTS = Object.freeze([
+        Object.freeze({
+          id: 'hc-001',
+          code: 'HC-001',
+          title: 'GRAVITY FEED CALIBRATION',
+          summary: 'Route a falling-cell stream from the fixed source to the consuming collection port.',
+          input: 'FALLING-CELL SOURCE',
+          output: 'COLLECTION PORT',
+          difficulty: 'ORIENTATION',
+          folderName: 'GRAVITY FEED CALIBRATION CONTRACT',
+          archiveAsset: 'contracts/GRAVITY-FEED-CALIBRATION-CONTRACT.zip',
+          archiveName: 'GRAVITY FEED CALIBRATION CONTRACT.zip',
+          packageNote: 'The pass threshold is deliberately left open until the contract acceptance system is defined.',
+          files: Object.freeze([
+            Object.freeze({ name: 'MATERIALS.PDF', kind: 'PDF', asset: 'contracts/HC-001-MATERIALS.pdf' }),
+            Object.freeze({ name: 'REQUIREMENTS.PDF', kind: 'PDF', asset: 'contracts/HC-001-REQUIREMENTS.pdf' }),
+            Object.freeze({ name: 'GRAVITY FEED CALIBRATION.HCW', kind: 'DESIGN', asset: 'contracts/GRAVITY-FEED-CALIBRATION.HCW' }),
+          ]),
+        }),
+      ]);
       let zCounter = 20;
       let activeId = null;
       let toastTimer = null;
@@ -816,7 +877,7 @@ Compare variant B after the next test.</textarea>
       const apps = {
         designer: { code: 'DS', title: 'SYSTEM DESIGNER', subtitle: 'UNSAVED DESIGN / ROUTE A', template: 'designer-content', x: 34, y: 28, w: 690, h: 510, minW: 430, minH: 310 },
         manual: { code: 'MN', title: 'COMPONENT MANUAL', subtitle: 'REFERENCE 7-C', template: 'manual-content', x: 750, y: 44, w: 390, h: 390, minW: 300, minH: 260 },
-        contract: { code: 'CT', title: 'CONTRACT HC-001', subtitle: 'REQUIREMENTS', template: 'contract-content', x: 760, y: 460, w: 420, h: 260, minW: 310, minH: 210 },
+        contract: { code: 'CT', title: 'CONTRACT BOARD', subtitle: 'AVAILABLE WORK', template: 'contract-content', x: 760, y: 460, w: 460, h: 310, minW: 350, minH: 260, allowMultiple: false },
         trace: { code: 'TR', title: 'TEST TRACE', subtitle: 'RUN 006 / FAILED', template: 'trace-content', x: 220, y: 400, w: 470, h: 265, minW: 340, minH: 210 },
         notes: { code: 'NT', title: 'FIELD NOTES', subtitle: 'LOCAL DOCUMENT', template: 'notes-content', x: 560, y: 130, w: 310, h: 255, minW: 250, minH: 190 },
         files: { code: 'FL', title: 'PROJECT FILES', subtitle: 'WORKSPACE STORAGE', template: 'files-content', x: 390, y: 145, w: 540, h: 375, minW: 380, minH: 270, allowMultiple: false },
@@ -853,6 +914,8 @@ Compare variant B after the next test.</textarea>
             ? { ownerId: null }
             : appId === 'files'
               ? defaultFilesData()
+              : appId === 'contract'
+                ? { selectedContractId: null }
               : appId === 'manual'
                 ? { pdfName: 'HCW-7 EXPANDED OPERATOR PROGRAMMING REFERENCE.PDF' }
               : {};
@@ -1319,6 +1382,139 @@ Compare variant B after the next test.</textarea>
         return folderId;
       }
 
+      function contractById(contractId) {
+        return CONTRACTS.find((contract) => contract.id === contractId) || null;
+      }
+
+      function normalizeContractData(id) {
+        if (!state[id]?.data) state[id].data = {};
+        const data = state[id].data;
+        if (!contractById(data.selectedContractId)) data.selectedContractId = null;
+        return data;
+      }
+
+      function renderContract(id) {
+        if (state[id]?.appId !== 'contract') return;
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        const data = normalizeContractData(id);
+        const selected = contractById(data.selectedContractId);
+        const catalog = element.querySelector('[data-contract-catalog]');
+        const detail = element.querySelector('[data-contract-detail]');
+        const back = element.querySelector('[data-contract-action="back"]');
+        const heading = element.querySelector('[data-contract-heading]');
+        const status = element.querySelector('[data-contract-status]');
+        catalog.hidden = Boolean(selected);
+        detail.hidden = !selected;
+        back.hidden = !selected;
+        heading.textContent = selected ? selected.code : 'CONTRACT BOARD';
+        status.textContent = selected && data.lastImportedContractId === selected.id
+          ? 'PROJECT FILES ADDED'
+          : `${CONTRACTS.length} AVAILABLE`;
+        if (!selected) {
+          catalog.innerHTML = `
+            <p class="contract-list-label">SELECT A CONTRACT TO INSPECT ITS I/O, DIFFICULTY, AND PROJECT PACKAGE</p>
+            ${CONTRACTS.map((contract) => `
+              <button class="contract-card" data-contract-id="${contract.id}" type="button">
+                <span class="contract-card-code">${contract.code}</span>
+                <span class="contract-card-copy"><strong>${contract.title}</strong><small>${contract.input} → ${contract.output}</small></span>
+                <span class="contract-card-open" aria-hidden="true">›</span>
+              </button>`).join('')}`;
+          detail.innerHTML = '';
+          return;
+        }
+        detail.innerHTML = `
+          <div class="contract-id"><span class="contract-number">${selected.code}</span><span class="contract-title">${selected.title}</span></div>
+          <p class="contract-copy">${selected.summary}</p>
+          <dl class="contract-facts">
+            <div class="contract-fact"><dt>INPUT</dt><dd>${selected.input}</dd></div>
+            <div class="contract-fact"><dt>OUTPUT</dt><dd>${selected.output}</dd></div>
+            <div class="contract-fact"><dt>DIFFICULTY</dt><dd>${selected.difficulty}</dd></div>
+          </dl>
+          <div class="contract-package">
+            <strong>PROJECT PACKAGE</strong>
+            <span>MATERIALS.PDF · REQUIREMENTS.PDF · GRAVITY FEED CALIBRATION.HCW</span>
+            <span>${selected.packageNote}</span>
+          </div>
+          <div class="contract-actions">
+            <a class="tool-button contract-download" data-contract-action="download" data-contract-id="${selected.id}" href="${selected.archiveAsset}" download="${selected.archiveName}">DOWNLOAD PROJECT FILES</a>
+          </div>`;
+      }
+
+      function importContractPackage(contract) {
+        const filesId = 'files';
+        const data = normalizeFilesData(filesId);
+        const folderId = `contract-${contract.id}`;
+        let folder = fileNode(data, folderId) || data.nodes.find((node) => node.type === 'folder' && node.contractId === contract.id);
+        if (!folder) {
+          folder = { id: folderId, type: 'folder', name: contract.folderName, parentId: 'root', contractId: contract.id };
+          data.nodes.push(folder);
+        } else {
+          folder.name = contract.folderName;
+          folder.parentId = 'root';
+          folder.contractId = contract.id;
+        }
+        contract.files.forEach((file, index) => {
+          const fileId = `${contract.id}-package-${index + 1}`;
+          const existing = fileNode(data, fileId);
+          const value = { id: fileId, type: 'file', parentId: folder.id, contractId: contract.id, ...file };
+          if (existing) Object.assign(existing, value);
+          else data.nodes.push(value);
+        });
+        data.currentFolderId = folder.id;
+        data.selectedId = null;
+        const contractWindow = Object.keys(state).find((windowId) => state[windowId].appId === 'contract' && state[windowId].open);
+        if (contractWindow) {
+          normalizeContractData(contractWindow).lastImportedContractId = contract.id;
+          renderContract(contractWindow);
+        }
+        openWindow(filesId);
+        renderFiles(filesId);
+        showToast(`${contract.title} added to Files`);
+        publish('contract:package-imported', { contractId: contract.id, folderId: folder.id, files: contract.files.map((file) => file.name) }, contract.id);
+        return folder.id;
+      }
+
+      async function openStoredFile(node) {
+        if (node.kind === 'PDF' && node.asset) {
+          openWindow('manual');
+          await loadManualPdf('manual', node.asset, node.name);
+          showToast(`${node.name} opened`);
+          publish('files:pdf-opened', { nodeId: node.id, asset: node.asset }, 'files');
+          return;
+        }
+        if (node.kind === 'DESIGN' && node.asset) {
+          openWindow('designer');
+          showToast(`${node.name} is the starter save`);
+          publish('files:design-selected', { nodeId: node.id, asset: node.asset }, 'files');
+          return;
+        }
+        showToast(`${node.name} is stored here`);
+      }
+
+      function initializeContract(id, element) {
+        element.addEventListener('click', (event) => {
+          const back = event.target.closest('[data-contract-action="back"]');
+          if (back) {
+            normalizeContractData(id).selectedContractId = null;
+            renderContract(id);
+            return;
+          }
+          const download = event.target.closest('[data-contract-action="download"]');
+          if (download) {
+            const contract = contractById(download.dataset.contractId);
+            if (contract) importContractPackage(contract);
+            return;
+          }
+          const card = event.target.closest('.contract-card[data-contract-id]');
+          if (!card) return;
+          normalizeContractData(id).selectedContractId = card.dataset.contractId;
+          renderContract(id);
+          publish('contract:selected', { contractId: card.dataset.contractId }, id);
+        });
+        renderContract(id);
+      }
+
       function renderFiles(id) {
         if (state[id]?.appId !== 'files') return;
         const element = document.querySelector(`[data-window="${id}"]`);
@@ -1371,7 +1567,7 @@ Compare variant B after the next test.</textarea>
           button.setAttribute('role', 'listitem');
           const childCount = node.type === 'folder' ? data.nodes.filter((candidate) => candidate.parentId === node.id).length : null;
           const meta = node.type === 'folder' ? `${childCount} ITEM${childCount === 1 ? '' : 'S'}` : node.kind;
-          const symbol = node.type === 'folder' ? 'DIR' : ({ DESIGN: 'DSN', TRACE: 'LOG', MANUAL: 'PDF', CONTRACT: 'CTR' }[node.kind] || 'DOC');
+          const symbol = node.type === 'folder' ? 'DIR' : ({ DESIGN: 'DSN', TRACE: 'LOG', MANUAL: 'PDF', PDF: 'PDF', CONTRACT: 'CTR' }[node.kind] || 'DOC');
           const icon = document.createElement('span');
           icon.className = 'file-symbol';
           icon.textContent = symbol;
@@ -1387,7 +1583,7 @@ Compare variant B after the next test.</textarea>
           });
           button.addEventListener('dblclick', () => {
             if (node.type === 'folder') openFilesFolder(id, node.id);
-            else showToast(`${node.name} is stored here`);
+            else openStoredFile(node);
           });
           button.addEventListener('dragstart', (event) => {
             event.dataTransfer.effectAllowed = 'move';
@@ -1456,6 +1652,7 @@ Compare variant B after the next test.</textarea>
           renderPalette(id);
         }
         if (state[id].appId === 'files') initializeFiles(id, element);
+        if (state[id].appId === 'contract') initializeContract(id, element);
         if (state[id].appId === 'manual') initializeManual(id, element);
       }
 
