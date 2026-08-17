@@ -225,8 +225,6 @@
     }
     .app-window[hidden] { display: none; }
     .app-window.active { border-color: #0c2d3a; box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
-    .app-window.maximized { box-shadow: none; }
-
     .titlebar {
       min-width: 0;
       display: grid;
@@ -306,8 +304,6 @@
       background: repeating-linear-gradient(135deg, transparent 0 3px, #63706e 3px 4px);
       clip-path: polygon(100% 0, 100% 100%, 0 100%);
     }
-    .maximized .resize-handle { display: none; }
-
     .shelf {
       min-width: 0;
       display: grid;
@@ -409,23 +405,32 @@
     .detach-button:hover { background: white; }
     .detach-button svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; }
     .component-chip {
-      width: 100%;
-      display: grid;
-      grid-template-columns: 18px minmax(0, 1fr);
-      align-items: center;
-      gap: 5px;
-      margin: 0 0 5px;
-      padding: 5px;
+      position: relative;
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      margin: 0 4px 5px 0;
+      padding: 0;
       border: 1px solid #75807c;
       background: #ecebe2;
-      font-size: .45rem;
-      font-weight: 800;
-      text-align: left;
+      vertical-align: top;
+      cursor: pointer;
     }
-    .component-cell { width: 15px; height: 15px; border: 1px solid #33464c; background: var(--orange); }
+    .component-name {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .component-cell { width: 22px; height: 22px; border: 1px solid #33464c; background: var(--orange); }
     .component-cell.wall { background: #364e58; }
     .component-chip.selected { color: white; border-color: var(--navy); background: var(--navy-2); }
-    .component-chip.disabled { opacity: .48; }
+    .component-chip.disabled { opacity: .48; cursor: not-allowed; }
     .work-grid {
       position: relative;
       min-width: 0;
@@ -639,9 +644,9 @@
             <div class="rail-label">COMPONENTS</div>
             <button class="detach-button" data-designer-action="detach-palette" aria-label="Detach component palette" title="Detach component palette"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5v8h8v-3"/><path d="M8 2h5v5M13 2 7 8"/></svg></button>
           </div>
-          <button class="component-chip" data-component="falling"><span class="component-cell"></span><span>FALLING CELL</span></button>
-          <button class="component-chip" data-component="fixed"><span class="component-cell wall"></span><span>FIXED CELL</span></button>
-          <button class="component-chip disabled" disabled><span class="component-cell"></span><span>MODIFIER</span></button>
+          <button class="component-chip" data-component="falling" aria-label="Falling cell" title="Falling cell"><span class="component-cell"></span><span class="component-name">FALLING CELL</span></button>
+          <button class="component-chip" data-component="fixed" aria-label="Fixed cell" title="Fixed cell"><span class="component-cell wall"></span><span class="component-name">FIXED CELL</span></button>
+          <button class="component-chip disabled" disabled aria-label="Modifier unavailable" title="Modifier unavailable"><span class="component-cell"></span><span class="component-name">MODIFIER</span></button>
         </aside>
         <button class="palette-tether" data-designer-action="show-palette" aria-label="Show detached component palette" title="Component palette is detached">CP</button>
         <div class="work-grid" tabindex="0" aria-label="Design surface viewport. Use arrow keys to pan">
@@ -664,9 +669,9 @@
       </div>
       <aside class="detached-palette">
         <div class="rail-label">PLACEABLE COMPONENTS</div>
-        <button class="component-chip" data-component="falling"><span class="component-cell"></span><span>FALLING CELL</span></button>
-        <button class="component-chip" data-component="fixed"><span class="component-cell wall"></span><span>FIXED CELL</span></button>
-        <button class="component-chip disabled" disabled><span class="component-cell"></span><span>MODIFIER / UNAVAILABLE</span></button>
+        <button class="component-chip" data-component="falling" aria-label="Falling cell" title="Falling cell"><span class="component-cell"></span><span class="component-name">FALLING CELL</span></button>
+        <button class="component-chip" data-component="fixed" aria-label="Fixed cell" title="Fixed cell"><span class="component-cell wall"></span><span class="component-name">FIXED CELL</span></button>
+        <button class="component-chip disabled" disabled aria-label="Modifier unavailable" title="Modifier unavailable"><span class="component-cell"></span><span class="component-name">MODIFIER / UNAVAILABLE</span></button>
       </aside>
     </div>
   </template>
@@ -887,7 +892,7 @@ Compare variant B after the next test.</textarea>
             <span class="window-controls">
               <button class="window-control pin" data-window-action="pin" aria-label="Pin ${title}" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h6l-1 4 2 2v1H9v5l-1 2-1-2V8H4V7l2-2z"/></svg></button>
               <button class="window-control" data-window-action="minimize" aria-label="Minimize ${title}">_</button>
-              <button class="window-control" data-window-action="maximize" aria-label="Maximize ${title}">□</button>
+              <button class="window-control" data-window-action="shrink" aria-label="Shrink ${title} to minimum size" title="Shrink to minimum size"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 2l5 5M7 3v4H3M14 14l-5-5M9 13V9h4"/></svg></button>
               ${newWindowControl}
               <button class="window-control close" data-window-action="close" aria-label="Close ${title}">×</button>
             </span>
@@ -904,15 +909,12 @@ Compare variant B after the next test.</textarea>
         desktop.append(element);
 
         element.addEventListener('pointerdown', () => focusWindow(id));
-        element.querySelector('.titlebar').addEventListener('dblclick', (event) => {
-          if (!event.target.closest('button')) toggleMaximize(id);
-        });
         element.querySelectorAll('[data-window-action]').forEach((button) => {
           button.addEventListener('click', (event) => {
             event.stopPropagation();
             const action = button.dataset.windowAction;
             if (action === 'minimize') minimizeWindow(id);
-            if (action === 'maximize') toggleMaximize(id);
+            if (action === 'shrink') shrinkWindow(id);
             if (action === 'pin') togglePin(id);
             if (action === 'new') newWindow(id);
             if (action === 'close') closeWindow(id);
@@ -1096,9 +1098,10 @@ Compare variant B after the next test.</textarea>
         element.hidden = false;
         element.classList.toggle('pinned', state[id].pinned);
         element.querySelector('[data-window-action="pin"]').setAttribute('aria-pressed', String(state[id].pinned));
-        element.classList.toggle('maximized', state[id].maximized);
-        if (state[id].maximized) maximizeToPlane(id);
-        else setRect(id, state[id]);
+        state[id].maximized = false;
+        state[id].restore = null;
+        element.classList.remove('maximized');
+        setRect(id, state[id]);
         if (state[id].appId === 'designer') renderDesigner(id);
         if (state[id].appId === 'palette') renderPalette(id);
         focusWindow(id);
@@ -1160,28 +1163,17 @@ Compare variant B after the next test.</textarea>
         publish('window:closed', { id, appId, instance }, id);
       }
 
-      function maximizeToPlane(id) {
-        const size = planeSize();
-        setRect(id, { x: 0, y: 0, w: size.width, h: size.height });
-      }
-
-      function toggleMaximize(id) {
+      function shrinkWindow(id) {
         const element = document.querySelector(`[data-window="${id}"]`);
         if (!element) return;
-        if (!state[id].maximized) {
-          state[id].restore = { x: state[id].x, y: state[id].y, w: state[id].w, h: state[id].h };
-          state[id].maximized = true;
-          element.classList.add('maximized');
-          maximizeToPlane(id);
-        } else {
-          state[id].maximized = false;
-          element.classList.remove('maximized');
-          setRect(id, state[id].restore || appFor(id));
-          state[id].restore = null;
-        }
+        const app = appFor(id);
+        state[id].maximized = false;
+        state[id].restore = null;
+        element.classList.remove('maximized');
+        setRect(id, { x: state[id].x, y: state[id].y, w: app.minW, h: app.minH });
         focusWindow(id);
         renderTasks();
-        publish('window:maximized', { id, maximized: state[id].maximized }, id);
+        publish('window:shrunk', { id, w: state[id].w, h: state[id].h }, id);
       }
 
       function togglePin(id) {
@@ -1211,7 +1203,6 @@ Compare variant B after the next test.</textarea>
         const rect = desktop.getBoundingClientRect();
         const x = clientX - rect.left;
         const y = clientY - rect.top;
-        if (y <= 16) return 'full';
         if (x <= 16) return 'left';
         if (x >= rect.width - 16) return 'right';
         return null;
@@ -1224,7 +1215,6 @@ Compare variant B after the next test.</textarea>
         }
         const size = planeSize();
         const rects = {
-          full: { x: 5, y: 5, w: size.width - 10, h: size.height - 10 },
           left: { x: 5, y: 5, w: size.width / 2 - 8, h: size.height - 10 },
           right: { x: size.width / 2 + 3, y: 5, w: size.width / 2 - 8, h: size.height - 10 },
         };
@@ -1235,10 +1225,9 @@ Compare variant B after the next test.</textarea>
 
       function applySnap(id, zone) {
         const size = planeSize();
-        state[id].maximized = zone === 'full';
+        state[id].maximized = false;
         const element = document.querySelector(`[data-window="${id}"]`);
-        element.classList.toggle('maximized', zone === 'full');
-        if (zone === 'full') setRect(id, { x: 0, y: 0, w: size.width, h: size.height });
+        element.classList.remove('maximized');
         if (zone === 'left') setRect(id, { x: 0, y: 0, w: size.width / 2, h: size.height });
         if (zone === 'right') setRect(id, { x: size.width / 2, y: 0, w: size.width / 2, h: size.height });
         publish('window:snapped', { id, zone }, id);
@@ -1247,7 +1236,7 @@ Compare variant B after the next test.</textarea>
       function installDrag(id, element) {
         const titlebar = element.querySelector('.titlebar');
         titlebar.addEventListener('pointerdown', (event) => {
-          if (event.button !== 0 || event.target.closest('button') || state[id].maximized) return;
+          if (event.button !== 0 || event.target.closest('button')) return;
           event.preventDefault();
           focusWindow(id);
           titlebar.setPointerCapture(event.pointerId);
@@ -1283,7 +1272,7 @@ Compare variant B after the next test.</textarea>
       function installResize(id, element) {
         element.querySelectorAll('.resize-handle').forEach((handle) => {
           handle.addEventListener('pointerdown', (event) => {
-            if (event.button !== 0 || state[id].maximized) return;
+            if (event.button !== 0) return;
             event.preventDefault();
             event.stopPropagation();
             focusWindow(id);
@@ -1437,6 +1426,8 @@ Compare variant B after the next test.</textarea>
           Object.assign(state[id], value);
           state[id].appId = appId;
           state[id].instance = value.instance || 1;
+          state[id].maximized = false;
+          state[id].restore = null;
           instanceCounters[appId] = Math.max(instanceCounters[appId] || 1, state[id].instance);
           zCounter = Math.max(zCounter, value.z || 1);
           if (value.open) {
@@ -1466,8 +1457,7 @@ Compare variant B after the next test.</textarea>
         }
         Object.keys(state).forEach((id) => {
           if (!state[id].open || state[id].minimized) return;
-          if (state[id].maximized) maximizeToPlane(id);
-          else setRect(id, state[id]);
+          setRect(id, state[id]);
         });
       }
 
@@ -1519,7 +1509,7 @@ Compare variant B after the next test.</textarea>
         newWindow,
         minimize: minimizeWindow,
         close: closeWindow,
-        maximize: toggleMaximize,
+        shrink: shrinkWindow,
         pin: togglePin,
         closeUnpinned: closeUnpinnedWindows,
         clean: cleanDesk,
