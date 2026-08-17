@@ -461,19 +461,17 @@
     .detached-palette { height: 100%; min-height: 0; padding: 9px; overflow: auto; background: #d4d5cc; }
     .palette-link { color: var(--ink-soft); font-size: .44rem; }
 
-    .manual-page { min-height: 100%; padding: 11px 13px 18px; background: #ede7d8; }
-    .manual-kicker { color: #776550; font-size: .45rem; font-weight: 900; letter-spacing: .09em; }
-    .manual-page h2 { margin: 5px 0 4px; font-size: .8rem; line-height: 1.1; }
-    .manual-rule { height: 3px; margin: 7px 0 10px; background: var(--orange); }
-    .manual-columns { display: grid; grid-template-columns: minmax(0, 1fr) 92px; gap: 11px; }
-    .manual-page p { margin: 0 0 8px; font-size: .5rem; line-height: 1.55; }
-    .diagram-box { min-height: 104px; display: grid; place-items: center; border: 1px solid #796f62; background: #e3dbc8; }
-    .diagram-orbit { position: relative; width: 66px; height: 66px; border: 1px solid #6c6254; border-radius: 50%; }
-    .diagram-orbit::before, .diagram-orbit::after { content: ""; position: absolute; inset: 14px; border: 1px solid #8d6244; transform: rotate(45deg); }
-    .diagram-orbit::after { inset: 26px; background: var(--orange); border: 0; }
-    .parameter-table { width: 100%; border-collapse: collapse; font-size: .46rem; }
-    .parameter-table th, .parameter-table td { padding: 4px 5px; border: 1px solid #8d8576; text-align: left; }
-    .parameter-table th { background: #dad1bd; }
+    .pdf-viewer { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #252d30; }
+    .pdf-viewer .app-toolbar { min-width: 0; gap: 4px; }
+    .pdf-file-input { display: none; }
+    .pdf-file-name { min-width: 28px; flex: 1; overflow: hidden; color: #4f5c5d; font-size: .42rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+    .pdf-page-readout { flex: 0 0 auto; color: #4f5c5d; font-size: .42rem; font-weight: 900; white-space: nowrap; }
+    .pdf-stage { position: relative; min-height: 0; overflow: auto; padding: 8px; background: #343d40; }
+    .pdf-canvas-wrap { min-width: 100%; min-height: 100%; display: flex; align-items: flex-start; justify-content: center; }
+    .pdf-canvas { max-width: none; display: block; background: white; box-shadow: 0 4px 0 rgb(0 0 0 / 20%); }
+    .pdf-status { position: absolute; inset: 0; display: grid; place-items: center; padding: 18px; color: #d9dfdc; background: #343d40; font-size: .5rem; font-weight: 800; letter-spacing: .05em; text-align: center; }
+    .pdf-status[hidden] { display: none; }
+    .pdf-open-external { color: inherit; text-decoration: none; }
 
     .contract-sheet { min-height: 100%; padding: 11px; background: #e8ece7; }
     .contract-id { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
@@ -712,28 +710,23 @@
   </template>
 
   <template id="manual-content">
-    <div class="app-toolbar">
-      <button class="tool-button">◀</button><button class="tool-button">▶</button>
-      <span class="tool-readout">COMPONENT REFERENCE / 04 OF 28</span>
-      <span class="tool-spacer"></span><button class="tool-button">INDEX</button>
-    </div>
-    <article class="manual-page">
-      <div class="manual-kicker">HCW TECHNICAL PUBLICATION 7-C</div>
-      <h2>FALLING CELL / TYPE FC-01</h2>
-      <div class="manual-rule"></div>
-      <div class="manual-columns">
-        <div>
-          <p>The cell evaluates its local direction once per update. If the forward cell is vacant, the cell advances one position.</p>
-          <table class="parameter-table">
-            <tr><th>PROPERTY</th><th>VALUE</th></tr>
-            <tr><td>Neighborhood</td><td>3 × 3 local</td></tr>
-            <tr><td>Update phase</td><td>Transport</td></tr>
-            <tr><td>Default direction</td><td>Down</td></tr>
-          </table>
-        </div>
-        <div class="diagram-box"><div class="diagram-orbit"></div></div>
+    <div class="pdf-viewer">
+      <div class="app-toolbar">
+        <input class="pdf-file-input" data-pdf-input type="file" accept="application/pdf,.pdf">
+        <button class="tool-button" data-pdf-action="open" type="button">OPEN PDF</button>
+        <span class="pdf-file-name" data-pdf-name title="HCW-7 EXPANDED OPERATOR PROGRAMMING REFERENCE.PDF">HCW-7 EXPANDED OPERATOR PROGRAMMING REFERENCE.PDF</span>
+        <button class="tool-button" data-pdf-action="previous" type="button" aria-label="Previous PDF page">◀</button>
+        <span class="pdf-page-readout" data-pdf-page>1 / –</span>
+        <button class="tool-button" data-pdf-action="next" type="button" aria-label="Next PDF page">▶</button>
+        <button class="tool-button" data-pdf-action="zoom-out" type="button" aria-label="Zoom PDF out">−</button>
+        <button class="tool-button" data-pdf-action="zoom-in" type="button" aria-label="Zoom PDF in">+</button>
+        <a class="tool-button pdf-open-external" data-pdf-external href="HCW-7-Expanded-Operator-Programming-Reference.pdf" target="_blank" rel="noopener" title="Open PDF in a new tab">NEW TAB</a>
       </div>
-    </article>
+      <div class="pdf-stage">
+        <div class="pdf-canvas-wrap"><canvas class="pdf-canvas" data-pdf-canvas aria-label="Rendered PDF page"></canvas></div>
+        <div class="pdf-status" data-pdf-status>LOADING PDF</div>
+      </div>
+    </div>
   </template>
 
   <template id="contract-content">
@@ -797,6 +790,7 @@ Compare variant B after the next test.</textarea>
     </div>
   </template>
 
+  <script src="pdf.min.js"></script>
   <script>
     (() => {
       const desktop = document.querySelector('#desktop');
@@ -811,10 +805,13 @@ Compare variant B after the next test.</textarea>
       const DESIGN_WORLD = { width: 1800, height: 1200 };
       const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
       const PALETTE_DOCK_GAP = 0;
+      const DEFAULT_MANUAL_PDF = 'HCW-7-Expanded-Operator-Programming-Reference.pdf';
       let zCounter = 20;
       let activeId = null;
       let toastTimer = null;
       const listeners = new Map();
+      const manualPdfRuntime = new Map();
+      if (window.pdfjsLib) window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'pdf.worker.min.js';
 
       const apps = {
         designer: { code: 'DS', title: 'SYSTEM DESIGNER', subtitle: 'UNSAVED DESIGN / ROUTE A', template: 'designer-content', x: 34, y: 28, w: 690, h: 510, minW: 430, minH: 310 },
@@ -856,6 +853,8 @@ Compare variant B after the next test.</textarea>
             ? { ownerId: null }
             : appId === 'files'
               ? defaultFilesData()
+              : appId === 'manual'
+                ? { pdfName: 'HCW-7 EXPANDED OPERATOR PROGRAMMING REFERENCE.PDF' }
               : {};
         return {
           appId,
@@ -1457,6 +1456,149 @@ Compare variant B after the next test.</textarea>
           renderPalette(id);
         }
         if (state[id].appId === 'files') initializeFiles(id, element);
+        if (state[id].appId === 'manual') initializeManual(id, element);
+      }
+
+      async function renderManualPdf(id) {
+        const runtime = manualPdfRuntime.get(id);
+        if (!runtime?.document || !runtime.element.isConnected || runtime.element.hidden) return;
+        const stage = runtime.element.querySelector('.pdf-stage');
+        const canvas = runtime.element.querySelector('[data-pdf-canvas]');
+        const readout = runtime.element.querySelector('[data-pdf-page]');
+        const status = runtime.element.querySelector('[data-pdf-status]');
+        if (!stage || stage.clientWidth < 40) return;
+        const page = await runtime.document.getPage(runtime.page);
+        const baseViewport = page.getViewport({ scale: 1 });
+        const fitScale = Math.max(.2, (stage.clientWidth - 18) / baseViewport.width);
+        const viewport = page.getViewport({ scale: fitScale * runtime.zoom });
+        const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.ceil(viewport.width * pixelRatio);
+        canvas.height = Math.ceil(viewport.height * pixelRatio);
+        canvas.style.width = `${viewport.width}px`;
+        canvas.style.height = `${viewport.height}px`;
+        const context = canvas.getContext('2d', { alpha: false });
+        runtime.renderTask?.cancel();
+        runtime.renderTask = page.render({
+          canvasContext: context,
+          viewport,
+          transform: pixelRatio === 1 ? null : [pixelRatio, 0, 0, pixelRatio, 0, 0],
+        });
+        try {
+          await runtime.renderTask.promise;
+          status.hidden = true;
+          readout.textContent = `${runtime.page} / ${runtime.document.numPages}`;
+        } catch (error) {
+          if (error?.name !== 'RenderingCancelledException') throw error;
+        } finally {
+          runtime.renderTask = null;
+        }
+      }
+
+      async function loadManualPdf(id, source, fileName, options = {}) {
+        const runtime = manualPdfRuntime.get(id);
+        if (!runtime) return;
+        const status = runtime.element.querySelector('[data-pdf-status]');
+        const name = runtime.element.querySelector('[data-pdf-name]');
+        const external = runtime.element.querySelector('[data-pdf-external]');
+        const loadVersion = ++runtime.loadVersion;
+        status.hidden = false;
+        status.textContent = 'LOADING PDF';
+        runtime.renderTask?.cancel();
+        if (runtime.document) await runtime.document.destroy();
+        if (runtime.objectUrl && runtime.objectUrl !== options.objectUrl) URL.revokeObjectURL(runtime.objectUrl);
+        runtime.document = null;
+        runtime.objectUrl = options.objectUrl || null;
+        try {
+          if (!window.pdfjsLib) throw new Error('PDF renderer unavailable');
+          const loadingTask = window.pdfjsLib.getDocument(options.data ? { data: options.data } : source);
+          const document = await loadingTask.promise;
+          if (loadVersion !== runtime.loadVersion) {
+            await document.destroy();
+            return;
+          }
+          runtime.document = document;
+          runtime.page = 1;
+          runtime.zoom = 1;
+          const displayName = fileName.toUpperCase();
+          state[id].data = { ...(state[id].data || {}), pdfName: displayName };
+          name.textContent = displayName;
+          name.title = displayName;
+          external.href = options.objectUrl || source;
+          await renderManualPdf(id);
+        } catch (error) {
+          if (loadVersion !== runtime.loadVersion) return;
+          status.hidden = false;
+          status.textContent = 'PDF COULD NOT BE OPENED';
+          console.error(error);
+        }
+      }
+
+      function initializeManual(id, element) {
+        const input = element.querySelector('[data-pdf-input]');
+        const runtime = {
+          element,
+          document: null,
+          page: 1,
+          zoom: 1,
+          objectUrl: null,
+          renderTask: null,
+          resizeTimer: null,
+          loadVersion: 0,
+          observer: null,
+        };
+        manualPdfRuntime.set(id, runtime);
+        element.querySelector('[data-pdf-action="open"]')?.addEventListener('click', () => input?.click());
+        element.querySelector('[data-pdf-action="previous"]')?.addEventListener('click', async () => {
+          if (!runtime.document || runtime.page <= 1) return;
+          runtime.page -= 1;
+          await renderManualPdf(id);
+        });
+        element.querySelector('[data-pdf-action="next"]')?.addEventListener('click', async () => {
+          if (!runtime.document || runtime.page >= runtime.document.numPages) return;
+          runtime.page += 1;
+          await renderManualPdf(id);
+        });
+        element.querySelector('[data-pdf-action="zoom-out"]')?.addEventListener('click', async () => {
+          runtime.zoom = Math.max(.5, runtime.zoom - .25);
+          await renderManualPdf(id);
+        });
+        element.querySelector('[data-pdf-action="zoom-in"]')?.addEventListener('click', async () => {
+          runtime.zoom = Math.min(2.5, runtime.zoom + .25);
+          await renderManualPdf(id);
+        });
+        input?.addEventListener('change', async () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+            showToast('Choose a PDF file');
+            input.value = '';
+            return;
+          }
+          const objectUrl = URL.createObjectURL(file);
+          const data = new Uint8Array(await file.arrayBuffer());
+          await loadManualPdf(id, objectUrl, file.name, { objectUrl, data });
+          showToast(`${file.name} opened`);
+        });
+        runtime.observer = new ResizeObserver(() => {
+          clearTimeout(runtime.resizeTimer);
+          runtime.resizeTimer = setTimeout(() => renderManualPdf(id), 80);
+        });
+        runtime.observer.observe(element.querySelector('.pdf-stage'));
+        loadManualPdf(id, DEFAULT_MANUAL_PDF, 'HCW-7 Expanded Operator Programming Reference.pdf');
+      }
+
+      function releaseManualPdf(id) {
+        const runtime = manualPdfRuntime.get(id);
+        if (runtime) {
+          runtime.loadVersion += 1;
+          runtime.observer?.disconnect();
+          clearTimeout(runtime.resizeTimer);
+          runtime.renderTask?.cancel();
+          runtime.document?.destroy();
+          if (runtime.objectUrl) URL.revokeObjectURL(runtime.objectUrl);
+        }
+        manualPdfRuntime.delete(id);
+        if (state[id]) state[id].data = { ...(state[id].data || {}), pdfName: 'HCW-7 EXPANDED OPERATOR PROGRAMMING REFERENCE.PDF' };
       }
 
       function openWindow(id) {
@@ -1523,6 +1665,7 @@ Compare variant B after the next test.</textarea>
         const element = document.querySelector(`[data-window="${id}"]`);
         if (!element) return;
         const appId = state[id].appId;
+        if (appId === 'manual') releaseManualPdf(id);
         if (appId === 'palette') {
           const ownerId = state[id].data?.ownerId;
           state[id].open = false;
