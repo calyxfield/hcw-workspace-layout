@@ -367,29 +367,32 @@
     .detach-button svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 1.6; }
     .component-chip {
       position: relative;
-      width: 38px;
+      width: 100%;
       height: 38px;
-      display: inline-grid;
-      place-items: center;
-      margin: 0 4px 5px 0;
-      padding: 0;
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr);
+      align-items: center;
+      gap: 7px;
+      margin: 0 0 5px;
+      padding: 0 7px;
       border: 1px solid #75807c;
       background: #ecebe2;
-      vertical-align: top;
       cursor: pointer;
+      text-align: left;
     }
     .component-name {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
+      min-width: 0;
       overflow: hidden;
-      clip: rect(0 0 0 0);
+      font-size: .43rem;
+      font-weight: 900;
+      letter-spacing: .025em;
+      text-overflow: ellipsis;
       white-space: nowrap;
-      border: 0;
     }
     .component-cell { width: 22px; height: 22px; border: 1px solid #33464c; background: var(--orange); }
     .component-cell.wall { background: #364e58; }
+    .component-cell.input { background: #d5a43e; }
+    .component-cell.output { background: #a74f42; }
     .component-chip.selected { color: white; border-color: var(--navy); background: var(--navy-2); }
     .component-chip.disabled { opacity: .48; cursor: not-allowed; }
     .work-grid {
@@ -503,7 +506,7 @@
     .contract-number { padding: 4px 6px; color: white; background: var(--green); font-size: .52rem; font-weight: 900; }
     .contract-title { font-size: .67rem; font-weight: 900; }
     .contract-copy { margin: 0 0 9px; color: var(--ink-soft); font-size: .49rem; line-height: 1.45; }
-    .contract-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
+    .contract-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
     .contract-fact { min-width: 0; padding: 6px; border-right: 1px solid #a8b0ab; background: #f4f3e9; }
     .contract-fact:last-child { border-right: 0; }
     .contract-fact dt { margin: 0 0 3px; color: var(--green); font-size: .39rem; font-weight: 900; letter-spacing: .08em; }
@@ -716,15 +719,15 @@
             <div class="rail-label">COMPONENTS</div>
             <button class="detach-button" data-designer-action="detach-palette" aria-label="Detach component palette" title="Detach component palette"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5v8h8v-3"/><path d="M8 2h5v5M13 2 7 8"/></svg></button>
           </div>
-          <button class="component-chip" data-component="falling" aria-label="Falling cell" title="Falling cell"><span class="component-cell"></span><span class="component-name">FALLING CELL</span></button>
-          <button class="component-chip" data-component="fixed" aria-label="Fixed cell" title="Fixed cell"><span class="component-cell wall"></span><span class="component-name">FIXED CELL</span></button>
+          <button class="component-chip" data-component="falling" aria-label="Sand" title="Sand"><span class="component-cell"></span><span class="component-name">SAND</span></button>
+          <button class="component-chip" data-component="fixed" aria-label="Wall" title="Wall"><span class="component-cell wall"></span><span class="component-name">WALL</span></button>
+          <button class="component-chip" data-component="input" aria-label="Input" title="Input"><span class="component-cell input"></span><span class="component-name">INPUT</span></button>
+          <button class="component-chip" data-component="output" aria-label="Output" title="Output"><span class="component-cell output"></span><span class="component-name">OUTPUT</span></button>
           <button class="component-chip disabled" disabled aria-label="Modifier unavailable" title="Modifier unavailable"><span class="component-cell"></span><span class="component-name">MODIFIER</span></button>
         </aside>
         <button class="palette-tether" data-designer-action="show-palette" aria-label="Show detached component palette" title="Component palette is detached">CP</button>
         <div class="work-grid" tabindex="0" aria-label="Design surface viewport. Use arrow keys to pan">
           <div class="design-world">
-            <div class="port source" title="Source placeholder"></div>
-            <div class="port sink" title="Sink placeholder"></div>
             <div class="ghost-path"></div>
           </div>
         </div>
@@ -740,8 +743,10 @@
       </div>
       <aside class="detached-palette">
         <div class="rail-label">PLACEABLE COMPONENTS</div>
-        <button class="component-chip" data-component="falling" aria-label="Falling cell" title="Falling cell"><span class="component-cell"></span><span class="component-name">FALLING CELL</span></button>
-        <button class="component-chip" data-component="fixed" aria-label="Fixed cell" title="Fixed cell"><span class="component-cell wall"></span><span class="component-name">FIXED CELL</span></button>
+        <button class="component-chip" data-component="falling" aria-label="Sand" title="Sand"><span class="component-cell"></span><span class="component-name">SAND</span></button>
+        <button class="component-chip" data-component="fixed" aria-label="Wall" title="Wall"><span class="component-cell wall"></span><span class="component-name">WALL</span></button>
+        <button class="component-chip" data-component="input" aria-label="Input" title="Input"><span class="component-cell input"></span><span class="component-name">INPUT</span></button>
+        <button class="component-chip" data-component="output" aria-label="Output" title="Output"><span class="component-cell output"></span><span class="component-name">OUTPUT</span></button>
         <button class="component-chip disabled" disabled aria-label="Modifier unavailable" title="Modifier unavailable"><span class="component-cell"></span><span class="component-name">MODIFIER / UNAVAILABLE</span></button>
       </aside>
       <button class="palette-tether" data-palette-action="dock" aria-label="Dock component palette to System Designer" title="Dock component palette to System Designer">DS</button>
@@ -852,14 +857,15 @@ Compare variant B after the next test.</textarea>
           id: 'hc-001',
           code: 'HC-001',
           title: 'GRAVITY FEED CALIBRATION',
-          summary: 'Route a falling-cell stream from the fixed source to the consuming collection port.',
-          input: 'FALLING-CELL SOURCE',
-          output: 'COLLECTION PORT',
+          summary: 'Place an Input and Output, route spawned sand between them, then let the system drain.',
+          input: 'PLAYER-PLACED INPUT',
+          output: 'PLAYER-PLACED OUTPUT',
+          test: '500 ON + 500 OFF',
           difficulty: 'ORIENTATION',
           folderName: 'GRAVITY FEED CALIBRATION CONTRACT',
           archiveAsset: 'contracts/GRAVITY-FEED-CALIBRATION-CONTRACT.zip',
           archiveName: 'GRAVITY FEED CALIBRATION CONTRACT.zip',
-          packageNote: 'The pass threshold is deliberately left open until the contract acceptance system is defined.',
+          packageNote: 'The tester reports efficiency (sand out / sand in), speed (sand out / turns elapsed), price, and the bounding area of every placed block including Input and Output.',
           files: Object.freeze([
             Object.freeze({ name: 'MATERIALS.PDF', kind: 'PDF', asset: 'contracts/HC-001-MATERIALS.pdf' }),
             Object.freeze({ name: 'REQUIREMENTS.PDF', kind: 'PDF', asset: 'contracts/HC-001-REQUIREMENTS.pdf' }),
@@ -882,7 +888,7 @@ Compare variant B after the next test.</textarea>
         notes: { code: 'NT', title: 'FIELD NOTES', subtitle: 'LOCAL DOCUMENT', template: 'notes-content', x: 560, y: 130, w: 310, h: 255, minW: 250, minH: 190 },
         files: { code: 'FL', title: 'PROJECT FILES', subtitle: 'WORKSPACE STORAGE', template: 'files-content', x: 390, y: 145, w: 540, h: 375, minW: 380, minH: 270, allowMultiple: false },
         archive: { code: 'AR', title: 'WORKSPACE ARCHIVE', subtitle: 'SNAPSHOTS', template: 'archive-content', x: 450, y: 200, w: 440, h: 285, minW: 340, minH: 230 },
-        palette: { code: 'CP', title: 'COMPONENT PALETTE', subtitle: 'DESIGNER LINK', template: 'palette-content', x: 610, y: 190, w: 290, h: 285, minW: 260, minH: 220, allowMultiple: false },
+        palette: { code: 'CP', title: 'COMPONENT PALETTE', subtitle: 'DESIGNER LINK', template: 'palette-content', x: 610, y: 190, w: 290, h: 330, minW: 260, minH: 305, allowMultiple: false },
       };
 
       const instanceCounters = Object.fromEntries(Object.keys(apps).map((id) => [id, 1]));
@@ -1429,6 +1435,7 @@ Compare variant B after the next test.</textarea>
           <dl class="contract-facts">
             <div class="contract-fact"><dt>INPUT</dt><dd>${selected.input}</dd></div>
             <div class="contract-fact"><dt>OUTPUT</dt><dd>${selected.output}</dd></div>
+            <div class="contract-fact"><dt>TEST</dt><dd>${selected.test}</dd></div>
             <div class="contract-fact"><dt>DIFFICULTY</dt><dd>${selected.difficulty}</dd></div>
           </dl>
           <div class="contract-package">

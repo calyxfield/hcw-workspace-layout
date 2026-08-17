@@ -5,16 +5,34 @@
     "id": "HC-001",
     "name": "Gravity Feed Calibration",
     "difficulty": "orientation",
-    "acceptanceTest": null
+    "acceptanceTest": {
+      "phases": [
+        { "name": "feed", "durationTurns": 500, "input": "on" },
+        { "name": "drain", "durationTurns": 500, "input": "off" }
+      ],
+      "pass": { "metric": "sandOut", "minimum": 1 },
+      "reports": {
+        "efficiency": { "numerator": "sandOut", "denominator": "sandIn" },
+        "speed": { "numerator": "sandOut", "denominator": "turnsElapsed" },
+        "price": { "metric": "placedBlockPriceTotal", "currency": "USD" },
+        "size": { "metric": "minimumBoundingRectangleArea", "scope": "allPlacedBlocks", "unit": "cells" }
+      }
+    },
+    "pricing": {
+      "currency": "USD",
+      "sand": 1,
+      "wall": 1,
+      "input": 0,
+      "output": 0
+    }
   },
   "world": {
     "width": 1800,
-    "height": 1200,
-    "source": { "x": 380, "y": 230, "type": "falling-cell-source", "fixed": true },
-    "sink": { "x": 1380, "y": 890, "type": "collection-port", "fixed": true }
+    "height": 1200
   },
-  "approvedComponents": ["falling", "fixed"],
+  "approvedComponents": ["sand", "wall", "input", "output"],
+  "requiredComponents": { "input": 1, "output": 1 },
   "components": [],
   "simulation": { "running": false, "tick": 0 },
-  "note": "Starter save. The acceptance threshold remains unassigned."
+  "note": "Starter save. Place Input and Output, run 500 turns with Input on and 500 off, then report efficiency, speed, price, and all-block bounding area."
 }
