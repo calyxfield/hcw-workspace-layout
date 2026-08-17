@@ -145,6 +145,7 @@
     .launch-button[data-app="contract"] .launch-icon { background: #d4dfd9; color: #285e53; }
     .launch-button[data-app="trace"] .launch-icon { background: #ead1c1; color: #893e2b; }
     .launch-button[data-app="notes"] .launch-icon { background: #ede7ad; color: #625c25; }
+    .launch-button[data-app="files"] .launch-icon { background: #d7d1b8; color: #67592d; }
     .launch-button[data-app="archive"] .launch-icon { background: #d9dce1; color: #3e4b60; }
     .launch-name { max-width: 58px; font-size: .46rem; font-weight: 800; line-height: 1.15; text-align: center; }
 
@@ -220,17 +221,19 @@
       overflow: visible;
       border: 1px solid var(--line-dark);
       background: var(--paper);
-      box-shadow: 7px 8px 0 var(--shadow);
+      box-shadow: none;
       transform: translate3d(0, 0, 0);
     }
     .app-window[hidden] { display: none; }
-    .app-window.active { border-color: #0c2d3a; box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
+    .app-window.active { border-color: #0c2d3a; box-shadow: none; }
+    .app-window[data-app="designer"] { box-shadow: 7px 8px 0 var(--shadow); }
+    .app-window[data-app="designer"].active { box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
     .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"] {
       border-right: 0;
-      box-shadow: 0 8px 0 var(--shadow);
+      box-shadow: none;
     }
     .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"].active {
-      box-shadow: 0 10px 0 rgb(18 42 50 / 35%);
+      box-shadow: none;
     }
     .app-window[data-app="designer"][data-palette-docked="true"][data-palette-side="right"] {
       border-right: 0;
@@ -556,6 +559,88 @@
     .snapshot-row small { color: var(--ink-soft); font-size: .42rem; }
     .snapshot-row button { padding: 3px 5px; border: 1px solid #687473; background: #f1f0e8; font-size: .42rem; }
 
+    .files-app { height: 100%; min-height: 0; display: grid; grid-template-rows: auto minmax(0, 1fr); background: #e8e4d7; }
+    .files-toolbar { flex-wrap: wrap; }
+    .files-path { min-width: 0; display: flex; align-items: center; gap: 2px; overflow: hidden; }
+    .files-crumb {
+      min-height: 20px;
+      padding: 2px 5px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      font-size: .44rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .files-crumb:hover,
+    .files-crumb.drop-target { border-color: #7a806f; background: #f4f1e5; }
+    .files-crumb + .files-crumb::before { content: "/"; margin-right: 5px; color: #8c8a7f; }
+    .files-view { min-height: 0; display: grid; grid-template-rows: auto auto minmax(0, 1fr); overflow: hidden; }
+    .file-create {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 8px;
+      border-bottom: 1px solid #aaa493;
+      background: #ddd7c7;
+    }
+    .file-create[hidden] { display: none; }
+    .file-create input {
+      min-width: 0;
+      flex: 1;
+      height: 24px;
+      padding: 3px 6px;
+      border: 1px solid #6f766d;
+      background: #f7f3e6;
+      color: var(--ink);
+      font-size: .49rem;
+    }
+    .file-create button { height: 24px; padding: 0 7px; border: 1px solid #6f766d; background: #f1eee3; font-size: .44rem; font-weight: 800; }
+    .files-hint { padding: 5px 8px; border-bottom: 1px solid #b7b1a0; color: var(--ink-soft); font-size: .42rem; letter-spacing: .025em; }
+    .file-grid {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+      grid-auto-rows: min-content;
+      gap: 7px;
+      padding: 9px;
+      overflow: auto;
+      align-content: start;
+    }
+    .file-entry {
+      min-width: 0;
+      min-height: 72px;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      grid-template-rows: auto auto;
+      align-content: center;
+      column-gap: 7px;
+      padding: 7px;
+      border: 1px solid #8d8a7e;
+      background: #f0ede3;
+      cursor: default;
+      text-align: left;
+    }
+    .file-entry:hover { border-color: #4b6063; background: #f8f6ed; }
+    .file-entry.selected { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
+    .file-entry.drop-target { color: white; border-color: var(--navy); background: var(--navy-2); }
+    .file-symbol {
+      grid-row: 1 / 3;
+      width: 30px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      border: 1px solid #5d6868;
+      background: #ddd8c8;
+      font-size: .43rem;
+      font-weight: 900;
+    }
+    .file-entry[data-file-type="folder"] .file-symbol { border-top: 6px solid #9d8742; background: #d8c98f; }
+    .file-entry strong { min-width: 0; overflow: hidden; font-size: .48rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+    .file-entry small { color: var(--ink-soft); font-size: .4rem; line-height: 1.2; }
+    .file-empty { grid-column: 1 / -1; padding: 24px 8px; color: #77766f; font-size: .49rem; text-align: center; }
+
     .toast {
       position: absolute;
       z-index: 10000;
@@ -624,6 +709,7 @@
         <button class="launch-button" data-app="contract" title="Open Contract"><span class="launch-icon">CT</span><span class="launch-name">CONTRACT</span></button>
         <button class="launch-button" data-app="trace" title="Open Test Trace"><span class="launch-icon">TR</span><span class="launch-name">TRACE</span></button>
         <button class="launch-button" data-app="notes" title="Open Notes"><span class="launch-icon">NT</span><span class="launch-name">NOTES</span></button>
+        <button class="launch-button" data-app="files" title="Open Files"><span class="launch-icon">FL</span><span class="launch-name">FILES</span></button>
         <button class="launch-button" data-app="archive" title="Open Workspace Archive"><span class="launch-icon">AR</span><span class="launch-name">ARCHIVE</span></button>
         <div class="minimized-tray" id="minimized-tray" hidden>
           <div class="launcher-label">MINIMIZED</div>
@@ -763,6 +849,27 @@ Compare variant B after the next test.</textarea>
     </section>
   </template>
 
+  <template id="files-content">
+    <div class="files-app">
+      <div class="app-toolbar files-toolbar">
+        <button class="tool-button" data-files-action="up">↑ UP</button>
+        <button class="tool-button" data-files-action="new-folder">NEW FOLDER</button>
+        <button class="tool-button" data-files-action="move-up" disabled>MOVE ITEM UP</button>
+        <span class="tool-spacer"></span>
+        <nav class="files-path" data-files-path aria-label="Current folder"></nav>
+      </div>
+      <section class="files-view">
+        <form class="file-create" data-file-create hidden>
+          <input data-file-name maxlength="36" aria-label="Folder name" autocomplete="off">
+          <button type="submit">CREATE</button>
+          <button type="button" data-files-action="cancel-folder">CANCEL</button>
+        </form>
+        <div class="files-hint">DOUBLE-CLICK FOLDERS TO OPEN · DRAG ITEMS ONTO FOLDERS OR PATHS</div>
+        <div class="file-grid" data-file-grid role="list" aria-label="Folder contents"></div>
+      </section>
+    </div>
+  </template>
+
   <script>
     (() => {
       const desktop = document.querySelector('#desktop');
@@ -788,11 +895,31 @@ Compare variant B after the next test.</textarea>
         contract: { code: 'CT', title: 'CONTRACT HC-001', subtitle: 'REQUIREMENTS', template: 'contract-content', x: 760, y: 460, w: 420, h: 260, minW: 310, minH: 210 },
         trace: { code: 'TR', title: 'TEST TRACE', subtitle: 'RUN 006 / FAILED', template: 'trace-content', x: 220, y: 400, w: 470, h: 265, minW: 340, minH: 210 },
         notes: { code: 'NT', title: 'FIELD NOTES', subtitle: 'LOCAL DOCUMENT', template: 'notes-content', x: 560, y: 130, w: 310, h: 255, minW: 250, minH: 190 },
+        files: { code: 'FL', title: 'PROJECT FILES', subtitle: 'WORKSPACE STORAGE', template: 'files-content', x: 390, y: 145, w: 540, h: 375, minW: 380, minH: 270, allowMultiple: false },
         archive: { code: 'AR', title: 'WORKSPACE ARCHIVE', subtitle: 'SNAPSHOTS', template: 'archive-content', x: 450, y: 200, w: 440, h: 285, minW: 340, minH: 230 },
         palette: { code: 'CP', title: 'COMPONENT PALETTE', subtitle: 'DESIGNER LINK', template: 'palette-content', x: 610, y: 190, w: 290, h: 285, minW: 260, minH: 220, allowMultiple: false },
       };
 
       const instanceCounters = Object.fromEntries(Object.keys(apps).map((id) => [id, 1]));
+
+      function defaultFilesData() {
+        return {
+          currentFolderId: 'root',
+          selectedId: null,
+          nextId: 1,
+          nextFolderNumber: 1,
+          nodes: [
+            { id: 'root', type: 'folder', name: 'DESK 03', parentId: null },
+            { id: 'designs', type: 'folder', name: 'DESIGNS', parentId: 'root' },
+            { id: 'research', type: 'folder', name: 'RESEARCH', parentId: 'root' },
+            { id: 'route-a', type: 'file', kind: 'DESIGN', name: 'ROUTE A.HCW', parentId: 'root' },
+            { id: 'run-006', type: 'file', kind: 'TRACE', name: 'RUN 006.LOG', parentId: 'root' },
+            { id: 'route-b', type: 'file', kind: 'DESIGN', name: 'FLOW ROUTE B.HCW', parentId: 'designs' },
+            { id: 'falling-cell', type: 'file', kind: 'MANUAL', name: 'FALLING CELL 7-C.PDF', parentId: 'research' },
+            { id: 'hc-001', type: 'file', kind: 'CONTRACT', name: 'HC-001.CONTRACT', parentId: 'research' },
+          ],
+        };
+      }
 
       function createWindowState(appId, instance = 1, offset = 0) {
         const app = apps[appId];
@@ -800,7 +927,9 @@ Compare variant B after the next test.</textarea>
           ? { view: { x: 240, y: 140, zoom: 1 }, paletteDetached: true, paletteDocked: true, paletteDockSide: 'left', paletteId: null, selectedComponent: 'falling' }
           : appId === 'palette'
             ? { ownerId: null }
-            : {};
+            : appId === 'files'
+              ? defaultFilesData()
+              : {};
         return {
           appId,
           instance,
@@ -1160,6 +1289,210 @@ Compare variant B after the next test.</textarea>
         dockPalette(designerId);
       }
 
+      function normalizeFilesData(id) {
+        const defaults = defaultFilesData();
+        if (!state[id]?.data || !Array.isArray(state[id].data.nodes)) state[id].data = defaults;
+        const data = state[id].data;
+        if (!data.nodes.some((node) => node.id === 'root' && node.type === 'folder')) data.nodes.unshift(defaults.nodes[0]);
+        const current = data.nodes.find((node) => node.id === data.currentFolderId && node.type === 'folder');
+        data.currentFolderId = current ? current.id : 'root';
+        if (!data.nodes.some((node) => node.id === data.selectedId)) data.selectedId = null;
+        data.nextId = Math.max(1, Number(data.nextId) || 1);
+        data.nextFolderNumber = Math.max(1, Number(data.nextFolderNumber) || 1);
+        return data;
+      }
+
+      function fileNode(data, nodeId) {
+        return data.nodes.find((node) => node.id === nodeId) || null;
+      }
+
+      function filePath(data, folderId) {
+        const path = [];
+        let folder = fileNode(data, folderId);
+        while (folder) {
+          path.unshift(folder);
+          folder = folder.parentId ? fileNode(data, folder.parentId) : null;
+        }
+        return path;
+      }
+
+      function folderContains(data, folderId, possibleChildId) {
+        let node = fileNode(data, possibleChildId);
+        while (node) {
+          if (node.id === folderId) return true;
+          node = node.parentId ? fileNode(data, node.parentId) : null;
+        }
+        return false;
+      }
+
+      function uniqueFileName(data, parentId, requestedName) {
+        const base = requestedName.trim() || 'NEW FOLDER';
+        const existing = new Set(data.nodes.filter((node) => node.parentId === parentId).map((node) => node.name.toLocaleLowerCase()));
+        if (!existing.has(base.toLocaleLowerCase())) return base;
+        let suffix = 2;
+        while (existing.has(`${base} ${suffix}`.toLocaleLowerCase())) suffix += 1;
+        return `${base} ${suffix}`;
+      }
+
+      function openFilesFolder(id, folderId) {
+        const data = normalizeFilesData(id);
+        const folder = fileNode(data, folderId);
+        if (!folder || folder.type !== 'folder') return;
+        data.currentFolderId = folder.id;
+        data.selectedId = null;
+        renderFiles(id);
+        publish('files:folder-opened', { id, folderId }, id);
+      }
+
+      function moveFileNode(id, nodeId, folderId) {
+        const data = normalizeFilesData(id);
+        const node = fileNode(data, nodeId);
+        const folder = fileNode(data, folderId);
+        if (!node || node.id === 'root' || !folder || folder.type !== 'folder') return false;
+        if (node.id === folder.id || (node.type === 'folder' && folderContains(data, node.id, folder.id))) {
+          showToast('A folder cannot contain itself');
+          return false;
+        }
+        if (node.parentId === folder.id) return false;
+        node.parentId = folder.id;
+        data.selectedId = null;
+        renderFiles(id);
+        showToast(`${node.name} moved to ${folder.name}`);
+        publish('files:item-moved', { id, nodeId, folderId }, id);
+        return true;
+      }
+
+      function createFilesFolder(id, requestedName) {
+        const data = normalizeFilesData(id);
+        const name = uniqueFileName(data, data.currentFolderId, requestedName);
+        const folderId = `folder-${data.nextId}`;
+        data.nextId += 1;
+        data.nextFolderNumber += 1;
+        data.nodes.push({ id: folderId, type: 'folder', name, parentId: data.currentFolderId });
+        data.selectedId = folderId;
+        renderFiles(id);
+        showToast(`${name} created`);
+        publish('files:folder-created', { id, folderId, name, parentId: data.currentFolderId }, id);
+        return folderId;
+      }
+
+      function renderFiles(id) {
+        if (state[id]?.appId !== 'files') return;
+        const element = document.querySelector(`[data-window="${id}"]`);
+        if (!element) return;
+        const data = normalizeFilesData(id);
+        const current = fileNode(data, data.currentFolderId);
+        const pathElement = element.querySelector('[data-files-path]');
+        const grid = element.querySelector('[data-file-grid]');
+        const upButton = element.querySelector('[data-files-action="up"]');
+        const moveUpButton = element.querySelector('[data-files-action="move-up"]');
+        pathElement.innerHTML = '';
+        filePath(data, current.id).forEach((folder) => {
+          const crumb = document.createElement('button');
+          crumb.type = 'button';
+          crumb.className = 'files-crumb';
+          crumb.dataset.folderId = folder.id;
+          crumb.textContent = folder.name;
+          crumb.addEventListener('click', () => openFilesFolder(id, folder.id));
+          crumb.addEventListener('dragover', (event) => { event.preventDefault(); crumb.classList.add('drop-target'); });
+          crumb.addEventListener('dragleave', () => crumb.classList.remove('drop-target'));
+          crumb.addEventListener('drop', (event) => {
+            event.preventDefault();
+            crumb.classList.remove('drop-target');
+            moveFileNode(id, event.dataTransfer.getData('text/plain'), folder.id);
+          });
+          pathElement.append(crumb);
+        });
+        upButton.disabled = !current.parentId;
+        const selected = fileNode(data, data.selectedId);
+        moveUpButton.disabled = !selected || !current.parentId;
+        grid.innerHTML = '';
+        const children = data.nodes
+          .filter((node) => node.parentId === current.id)
+          .sort((a, b) => (a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'folder' ? -1 : 1));
+        if (!children.length) {
+          const empty = document.createElement('div');
+          empty.className = 'file-empty';
+          empty.textContent = 'THIS FOLDER IS EMPTY';
+          grid.append(empty);
+          return;
+        }
+        children.forEach((node) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = 'file-entry';
+          button.classList.toggle('selected', data.selectedId === node.id);
+          button.dataset.fileId = node.id;
+          button.dataset.fileType = node.type;
+          button.draggable = true;
+          button.setAttribute('role', 'listitem');
+          const childCount = node.type === 'folder' ? data.nodes.filter((candidate) => candidate.parentId === node.id).length : null;
+          const meta = node.type === 'folder' ? `${childCount} ITEM${childCount === 1 ? '' : 'S'}` : node.kind;
+          const symbol = node.type === 'folder' ? 'DIR' : ({ DESIGN: 'DSN', TRACE: 'LOG', MANUAL: 'PDF', CONTRACT: 'CTR' }[node.kind] || 'DOC');
+          const icon = document.createElement('span');
+          icon.className = 'file-symbol';
+          icon.textContent = symbol;
+          const name = document.createElement('strong');
+          name.textContent = node.name;
+          const details = document.createElement('small');
+          details.textContent = meta;
+          button.append(icon, name, details);
+          button.addEventListener('click', () => {
+            data.selectedId = node.id;
+            grid.querySelectorAll('.file-entry').forEach((entry) => entry.classList.toggle('selected', entry.dataset.fileId === node.id));
+            moveUpButton.disabled = !current.parentId;
+          });
+          button.addEventListener('dblclick', () => {
+            if (node.type === 'folder') openFilesFolder(id, node.id);
+            else showToast(`${node.name} is stored here`);
+          });
+          button.addEventListener('dragstart', (event) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', node.id);
+          });
+          if (node.type === 'folder') {
+            button.addEventListener('dragover', (event) => { event.preventDefault(); button.classList.add('drop-target'); });
+            button.addEventListener('dragleave', () => button.classList.remove('drop-target'));
+            button.addEventListener('drop', (event) => {
+              event.preventDefault();
+              button.classList.remove('drop-target');
+              moveFileNode(id, event.dataTransfer.getData('text/plain'), node.id);
+            });
+          }
+          grid.append(button);
+        });
+      }
+
+      function initializeFiles(id, element) {
+        const form = element.querySelector('[data-file-create]');
+        const input = element.querySelector('[data-file-name]');
+        const hideCreate = () => { form.hidden = true; input.value = ''; };
+        element.querySelector('[data-files-action="new-folder"]')?.addEventListener('click', () => {
+          const data = normalizeFilesData(id);
+          form.hidden = false;
+          input.value = `NEW FOLDER ${String(data.nextFolderNumber).padStart(2, '0')}`;
+          input.focus();
+          input.select();
+        });
+        element.querySelector('[data-files-action="cancel-folder"]')?.addEventListener('click', hideCreate);
+        element.querySelector('[data-files-action="up"]')?.addEventListener('click', () => {
+          const data = normalizeFilesData(id);
+          const current = fileNode(data, data.currentFolderId);
+          if (current?.parentId) openFilesFolder(id, current.parentId);
+        });
+        element.querySelector('[data-files-action="move-up"]')?.addEventListener('click', () => {
+          const data = normalizeFilesData(id);
+          const current = fileNode(data, data.currentFolderId);
+          if (current?.parentId && data.selectedId) moveFileNode(id, data.selectedId, current.parentId);
+        });
+        form?.addEventListener('submit', (event) => {
+          event.preventDefault();
+          createFilesFolder(id, input.value);
+          hideCreate();
+        });
+        renderFiles(id);
+      }
+
       function initializeApp(id, element) {
         if (state[id].appId === 'designer') {
           element.querySelectorAll('[data-designer-action]').forEach((button) => button.addEventListener('click', () => {
@@ -1179,6 +1512,7 @@ Compare variant B after the next test.</textarea>
           element.querySelectorAll('[data-component]').forEach((button) => button.addEventListener('click', () => selectComponent(ownerId, button.dataset.component)));
           renderPalette(id);
         }
+        if (state[id].appId === 'files') initializeFiles(id, element);
       }
 
       function openWindow(id) {
@@ -1561,7 +1895,7 @@ Compare variant B after the next test.</textarea>
       }
 
       function saveLayout() {
-        const payload = { version: 5, activeId, zCounter, instanceCounters: { ...instanceCounters }, state: serializableState(), savedAt: new Date().toISOString() };
+        const payload = { version: 6, activeId, zCounter, instanceCounters: { ...instanceCounters }, state: serializableState(), savedAt: new Date().toISOString() };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         saveIndicator.textContent = 'SAVED NOW';
         showToast('Workspace layout saved locally');
