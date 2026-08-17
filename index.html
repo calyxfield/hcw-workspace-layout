@@ -511,6 +511,9 @@
     .contract-limit:last-child { border-right: 0; }
     .contract-limit dt { margin: 0 0 3px; color: var(--orange); font-size: .4rem; font-weight: 900; letter-spacing: .08em; }
     .contract-limit dd { margin: 0; font-size: .67rem; font-weight: 900; line-height: 1.2; }
+    .contract-reward { margin: -6px 0 6px; padding: 6px 7px; border: 2px solid var(--orange); border-top: 0; background: #f4f3e9; }
+    .contract-reward dt { margin: 0 0 3px; color: var(--orange); font-size: .4rem; font-weight: 900; letter-spacing: .08em; }
+    .contract-reward dd { margin: 0; font-size: .57rem; font-weight: 900; line-height: 1.2; }
     .contract-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
     .contract-fact { min-width: 0; padding: 6px; border-right: 1px solid #a8b0ab; background: #f4f3e9; }
     .contract-fact:last-child { border-right: 0; }
@@ -868,6 +871,7 @@ Compare variant B after the next test.</textarea>
           summary: 'Route Sand from the fixed Input at top left to the fixed Output at top right, then let the system drain.',
           maxCost: '$30',
           maxSize: '20 × 20',
+          reward: 'NONE',
           ports: 'FIXED',
           test: '500 ON + 500 OFF',
           difficulty: 'ORIENTATION',
@@ -1445,6 +1449,7 @@ Compare variant B after the next test.</textarea>
             <div class="contract-limit"><dt>MAX COST</dt><dd>${selected.maxCost}</dd></div>
             <div class="contract-limit"><dt>MAX SIZE</dt><dd>${selected.maxSize}</dd></div>
           </dl>
+          <dl class="contract-reward"><dt>REWARD</dt><dd>${selected.reward}</dd></dl>
           <dl class="contract-facts">
             <div class="contract-fact"><dt>INPUT / OUTPUT</dt><dd>${selected.ports}</dd></div>
             <div class="contract-fact"><dt>TEST</dt><dd>${selected.test}</dd></div>

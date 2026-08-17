@@ -5,6 +5,7 @@
     "id": "HC-001",
     "name": "Gravity Feed Calibration",
     "difficulty": "orientation",
+    "reward": null,
     "constraints": {
       "maxCost": { "value": 30, "currency": "USD", "scope": "playerPlacedBlocks" },
       "maxSize": { "width": 20, "height": 20, "scope": "allMachineBlocks" }
