@@ -148,6 +148,32 @@
     .launch-button[data-app="archive"] .launch-icon { background: #d9dce1; color: #3e4b60; }
     .launch-name { max-width: 58px; font-size: .46rem; font-weight: 800; line-height: 1.15; text-align: center; }
 
+    .minimized-tray {
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid #71807d;
+    }
+    .minimized-tray[hidden] { display: none; }
+    .minimized-list { display: grid; gap: 5px; }
+    .minimized-button {
+      width: 62px;
+      min-height: 44px;
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid #6d7875;
+      background: #e0e1d8;
+      cursor: pointer;
+      font-size: .41rem;
+      font-weight: 800;
+      text-align: left;
+    }
+    .minimized-button:hover { background: #f2f2e8; }
+    .minimized-icon { display: grid; place-items: center; width: 22px; height: 22px; color: white; background: var(--navy-2); font-size: .39rem; }
+    .minimized-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
     .desktop-plane {
       position: relative;
       min-width: 0;
@@ -240,6 +266,8 @@
     .window-control:hover { background: rgb(255 255 255 / 34%); }
     .window-control.pin[aria-pressed="true"] { color: white; background: var(--orange); }
     .window-control.close:hover { color: white; background: var(--red); }
+    .window-control svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: square; stroke-linejoin: miter; }
+    .window-control.pin svg { fill: currentColor; stroke: none; }
 
     .window-body { min-width: 0; min-height: 0; overflow: auto; background: var(--paper); }
     .window-footer {
@@ -470,6 +498,8 @@
     @media (max-width: 900px) {
       :root { --dock: 64px; }
       .launch-button { width: 50px; min-height: 55px; }
+      .minimized-button { width: 50px; grid-template-columns: 1fr; justify-items: center; }
+      .minimized-name { display: none; }
       .launch-name { max-width: 50px; }
       .system-context { display: none; }
       .desk-actions .desk-action:first-of-type { display: none; }
@@ -485,6 +515,8 @@
       .launch-button { width: 44px; min-height: 48px; margin-bottom: 3px; }
       .launch-icon { width: 25px; height: 25px; }
       .launch-name { display: none; }
+      .minimized-tray { margin-top: 5px; padding-top: 5px; }
+      .minimized-button { width: 44px; min-height: 34px; }
       .task-button { min-width: 42px; max-width: 44px; grid-template-columns: 1fr; padding: 4px; }
       .task-name { display: none; }
       .desk-actions .desk-action { padding: 0 6px; }
@@ -512,6 +544,10 @@
         <button class="launch-button" data-app="trace" title="Open Test Trace"><span class="launch-icon">TR</span><span class="launch-name">TRACE</span></button>
         <button class="launch-button" data-app="notes" title="Open Notes"><span class="launch-icon">NT</span><span class="launch-name">NOTES</span></button>
         <button class="launch-button" data-app="archive" title="Open Workspace Archive"><span class="launch-icon">AR</span><span class="launch-name">ARCHIVE</span></button>
+        <div class="minimized-tray" id="minimized-tray" hidden>
+          <div class="launcher-label">MINIMIZED</div>
+          <div class="minimized-list" id="minimized-list"></div>
+        </div>
       </nav>
 
       <div class="desktop-plane" id="desktop" aria-label="Movable application workspace">
@@ -624,10 +660,12 @@ Compare variant B after the next test.</textarea>
     (() => {
       const desktop = document.querySelector('#desktop');
       const taskList = document.querySelector('#task-list');
+      const minimizedTray = document.querySelector('#minimized-tray');
+      const minimizedList = document.querySelector('#minimized-list');
       const snapPreview = document.querySelector('#snap-preview');
       const toast = document.querySelector('#toast');
       const saveIndicator = document.querySelector('#save-indicator');
-      const STORAGE_KEY = 'hcw-workspace-layout-v2';
+      const STORAGE_KEY = 'hcw-workspace-layout-v3';
       const GRID = 9;
       let zCounter = 20;
       let activeId = null;
@@ -643,18 +681,39 @@ Compare variant B after the next test.</textarea>
         archive: { code: 'AR', title: 'WORKSPACE ARCHIVE', subtitle: 'SNAPSHOTS', template: 'archive-content', x: 450, y: 200, w: 440, h: 285, minW: 340, minH: 230 },
       };
 
-      const state = Object.fromEntries(Object.keys(apps).map((id) => [id, {
-        open: false,
-        minimized: false,
-        maximized: false,
-        pinned: id === 'designer',
-        x: apps[id].x,
-        y: apps[id].y,
-        w: apps[id].w,
-        h: apps[id].h,
-        z: 1,
-        restore: null,
-      }]));
+      const instanceCounters = Object.fromEntries(Object.keys(apps).map((id) => [id, 1]));
+
+      function createWindowState(appId, instance = 1, offset = 0) {
+        const app = apps[appId];
+        return {
+          appId,
+          instance,
+          open: false,
+          minimized: false,
+          maximized: false,
+          pinned: appId === 'designer' && instance === 1,
+          x: app.x + offset,
+          y: app.y + offset,
+          w: app.w,
+          h: app.h,
+          z: 1,
+          restore: null,
+        };
+      }
+
+      const state = Object.fromEntries(Object.keys(apps).map((id) => [id, createWindowState(id)]));
+
+      function appFor(id) { return apps[state[id]?.appId]; }
+      function windowTitle(id) {
+        const item = state[id];
+        const app = appFor(id);
+        return item.instance > 1 ? `${app.title} ${String(item.instance).padStart(2, '0')}` : app.title;
+      }
+      function windowCode(id) {
+        const item = state[id];
+        const app = appFor(id);
+        return item.instance > 1 ? `${app.code}${item.instance}` : app.code;
+      }
 
       function planeSize() {
         const rect = desktop.getBoundingClientRect();
@@ -666,7 +725,7 @@ Compare variant B after the next test.</textarea>
 
       function clampRect(id, rect) {
         const size = planeSize();
-        const app = apps[id];
+        const app = appFor(id);
         const w = clamp(rect.w, Math.min(app.minW, size.width), Math.max(Math.min(app.minW, size.width), size.width));
         const h = clamp(rect.h, Math.min(app.minH, size.height), Math.max(Math.min(app.minH, size.height), size.height));
         return {
@@ -709,38 +768,41 @@ Compare variant B after the next test.</textarea>
       }
 
       function focusWindow(id) {
-        if (!state[id].open || state[id].minimized) return;
+        if (!state[id]?.open || state[id].minimized) return;
         activeId = id;
         zCounter += 1;
         state[id].z = zCounter;
         document.querySelectorAll('.app-window').forEach((windowElement) => {
           const windowId = windowElement.dataset.window;
           windowElement.classList.toggle('active', windowId === id);
-          windowElement.style.zIndex = state[windowId].z;
+          windowElement.style.zIndex = state[windowId]?.z || 1;
         });
         renderTasks();
       }
 
       function makeWindow(id) {
-        const app = apps[id];
+        const app = appFor(id);
+        const title = windowTitle(id);
+        const code = windowCode(id);
         const element = document.createElement('section');
         element.className = 'app-window';
         element.dataset.window = id;
         element.setAttribute('role', 'dialog');
-        element.setAttribute('aria-label', app.title);
+        element.setAttribute('aria-label', title);
         element.innerHTML = `
           <header class="titlebar">
-            <span class="window-code">${app.code}</span>
-            <span class="window-heading"><strong>${app.title}</strong><small>${app.subtitle}</small></span>
+            <span class="window-code">${code}</span>
+            <span class="window-heading"><strong>${title}</strong><small>${app.subtitle}</small></span>
             <span class="window-controls">
-              <button class="window-control" data-window-action="minimize" aria-label="Minimize ${app.title}">_</button>
-              <button class="window-control" data-window-action="maximize" aria-label="Maximize ${app.title}">□</button>
-              <button class="window-control pin" data-window-action="pin" aria-label="Pin ${app.title}" aria-pressed="false">◆</button>
-              <button class="window-control close" data-window-action="close" aria-label="Close ${app.title}">×</button>
+              <button class="window-control pin" data-window-action="pin" aria-label="Pin ${title}" aria-pressed="false"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 1h6l-1 4 2 2v1H9v5l-1 2-1-2V8H4V7l2-2z"/></svg></button>
+              <button class="window-control" data-window-action="minimize" aria-label="Minimize ${title}">_</button>
+              <button class="window-control" data-window-action="maximize" aria-label="Maximize ${title}">□</button>
+              <button class="window-control" data-window-action="new" aria-label="Open another ${app.title} window"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5v8h8v-3"/><path d="M8 2h5v5M13 2 7 8"/></svg></button>
+              <button class="window-control close" data-window-action="close" aria-label="Close ${title}">×</button>
             </span>
           </header>
           <div class="window-body"></div>
-          <footer class="window-footer"><span>${app.code} APPLICATION</span><span>READY</span></footer>
+          <footer class="window-footer"><span>${code} APPLICATION</span><span>READY</span></footer>
           <div class="resize-handle" data-resize="w" aria-hidden="true"></div>
           <div class="resize-handle" data-resize="e" aria-hidden="true"></div>
           <div class="resize-handle" data-resize="s" aria-hidden="true"></div>
@@ -761,6 +823,7 @@ Compare variant B after the next test.</textarea>
             if (action === 'minimize') minimizeWindow(id);
             if (action === 'maximize') toggleMaximize(id);
             if (action === 'pin') togglePin(id);
+            if (action === 'new') newWindow(id);
             if (action === 'close') closeWindow(id);
           });
         });
@@ -771,7 +834,7 @@ Compare variant B after the next test.</textarea>
       }
 
       function openWindow(id) {
-        if (!apps[id]) return;
+        if (!state[id] || !appFor(id)) return;
         let element = document.querySelector(`[data-window="${id}"]`);
         if (!element) element = makeWindow(id);
         state[id].open = true;
@@ -788,6 +851,19 @@ Compare variant B after the next test.</textarea>
         publish('window:opened', { id }, id);
       }
 
+      function newWindow(sourceId) {
+        const appId = state[sourceId]?.appId || sourceId;
+        if (!apps[appId]) return null;
+        const instance = (instanceCounters[appId] || 1) + 1;
+        instanceCounters[appId] = instance;
+        const id = `${appId}-${instance}`;
+        const offset = 27 * ((instance - 1) % 6);
+        state[id] = createWindowState(appId, instance, offset);
+        openWindow(id);
+        publish('window:created', { id, appId, instance }, sourceId);
+        return id;
+      }
+
       function minimizeWindow(id) {
         const element = document.querySelector(`[data-window="${id}"]`);
         if (!element) return;
@@ -799,6 +875,7 @@ Compare variant B after the next test.</textarea>
             .sort((a, b) => state[b].z - state[a].z)[0] || null;
           if (activeId) focusWindow(activeId);
         }
+        renderLaunchers();
         renderTasks();
         publish('window:minimized', { id }, id);
       }
@@ -806,13 +883,16 @@ Compare variant B after the next test.</textarea>
       function closeWindow(id) {
         const element = document.querySelector(`[data-window="${id}"]`);
         if (!element) return;
+        const appId = state[id].appId;
+        const instance = state[id].instance;
         state[id].open = false;
         state[id].minimized = false;
         element.remove();
         if (activeId === id) activeId = null;
+        if (instance > 1) delete state[id];
         renderLaunchers();
         renderTasks();
-        publish('window:closed', { id }, id);
+        publish('window:closed', { id, appId, instance }, id);
       }
 
       function maximizeToPlane(id) {
@@ -831,7 +911,7 @@ Compare variant B after the next test.</textarea>
         } else {
           state[id].maximized = false;
           element.classList.remove('maximized');
-          setRect(id, state[id].restore || apps[id]);
+          setRect(id, state[id].restore || appFor(id));
           state[id].restore = null;
         }
         focusWindow(id);
@@ -846,7 +926,7 @@ Compare variant B after the next test.</textarea>
         element.classList.toggle('pinned', state[id].pinned);
         element.querySelector('[data-window-action="pin"]').setAttribute('aria-pressed', String(state[id].pinned));
         renderTasks();
-        showToast(state[id].pinned ? `${apps[id].title} pinned` : `${apps[id].title} unpinned`);
+        showToast(state[id].pinned ? `${windowTitle(id)} pinned` : `${windowTitle(id)} unpinned`);
         publish('window:pinned', { id, pinned: state[id].pinned }, id);
       }
 
@@ -960,7 +1040,7 @@ Compare variant B after the next test.</textarea>
               if (direction.includes('s')) next.h = snap(start.h + dy);
               if (direction.includes('w')) {
                 const right = start.x + start.w;
-                const minWidth = Math.min(apps[id].minW, planeSize().width);
+                const minWidth = Math.min(appFor(id).minW, planeSize().width);
                 next.x = clamp(snap(start.x + dx), 0, right - minWidth);
                 next.w = right - next.x;
               }
@@ -981,22 +1061,38 @@ Compare variant B after the next test.</textarea>
 
       function renderLaunchers() {
         document.querySelectorAll('.launch-button').forEach((button) => {
-          button.dataset.open = String(state[button.dataset.app].open);
+          button.dataset.open = String(Object.values(state).some((item) => item.appId === button.dataset.app && item.open));
+        });
+        renderMinimized();
+      }
+
+      function renderMinimized() {
+        minimizedList.innerHTML = '';
+        const minimizedIds = Object.keys(state)
+          .filter((id) => state[id].open && state[id].minimized)
+          .sort((a, b) => state[b].z - state[a].z);
+        minimizedTray.hidden = minimizedIds.length === 0;
+        minimizedIds.forEach((id) => {
+          const button = document.createElement('button');
+          button.className = 'minimized-button';
+          button.dataset.minimizedWindow = id;
+          button.setAttribute('aria-label', `Restore ${windowTitle(id)}`);
+          button.innerHTML = `<span class="minimized-icon">${windowCode(id)}</span><span class="minimized-name">${windowTitle(id)}</span>`;
+          button.addEventListener('click', () => openWindow(id));
+          minimizedList.append(button);
         });
       }
 
       function renderTasks() {
         taskList.innerHTML = '';
-        Object.keys(apps).filter((id) => state[id].open).sort((a, b) => state[a].z - state[b].z).forEach((id) => {
+        Object.keys(state).filter((id) => state[id].open && !state[id].minimized).sort((a, b) => state[a].z - state[b].z).forEach((id) => {
           const button = document.createElement('button');
           button.className = 'task-button';
-          button.classList.toggle('active', id === activeId && !state[id].minimized);
-          button.classList.toggle('minimized', state[id].minimized);
+          button.classList.toggle('active', id === activeId);
           button.classList.toggle('pinned', state[id].pinned);
-          button.innerHTML = `<span class="task-code">${apps[id].code}</span><span class="task-name">${apps[id].title}</span>`;
+          button.innerHTML = `<span class="task-code">${windowCode(id)}</span><span class="task-name">${windowTitle(id)}</span>`;
           button.addEventListener('click', () => {
-            if (state[id].minimized) openWindow(id);
-            else if (activeId === id) minimizeWindow(id);
+            if (activeId === id) minimizeWindow(id);
             else focusWindow(id);
           });
           taskList.append(button);
@@ -1019,7 +1115,7 @@ Compare variant B after the next test.</textarea>
           manual: { x: margin + mainW + gap, y: margin, w: sideW, h: sideH },
           contract: { x: margin + mainW + gap, y: margin + sideH + gap, w: sideW, h: sideH },
         };
-        Object.keys(apps).filter((id) => state[id].open).forEach((id) => {
+        Object.keys(state).filter((id) => state[id].open).forEach((id) => {
           const element = document.querySelector(`[data-window="${id}"]`);
           state[id].maximized = false;
           element.classList.remove('maximized');
@@ -1027,8 +1123,9 @@ Compare variant B after the next test.</textarea>
           element.hidden = state[id].minimized;
           if (placements[id]) setRect(id, placements[id]);
         });
-        const focusId = state.designer.open ? 'designer' : Object.keys(apps).find((id) => state[id].open);
+        const focusId = state.designer.open ? 'designer' : Object.keys(state).find((id) => state[id].open && !state[id].minimized);
         if (focusId) focusWindow(focusId);
+        renderLaunchers();
         renderTasks();
         if (announce) {
           showToast('Core windows arranged; supporting windows minimized');
@@ -1038,6 +1135,8 @@ Compare variant B after the next test.</textarea>
 
       function serializableState() {
         return Object.fromEntries(Object.entries(state).map(([id, value]) => [id, {
+          appId: value.appId,
+          instance: value.instance,
           open: value.open,
           minimized: value.minimized,
           maximized: value.maximized,
@@ -1052,7 +1151,7 @@ Compare variant B after the next test.</textarea>
       }
 
       function saveLayout() {
-        const payload = { version: 2, activeId, zCounter, state: serializableState(), savedAt: new Date().toISOString() };
+        const payload = { version: 3, activeId, zCounter, instanceCounters: { ...instanceCounters }, state: serializableState(), savedAt: new Date().toISOString() };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
         saveIndicator.textContent = 'SAVED NOW';
         showToast('Workspace layout saved locally');
@@ -1066,8 +1165,13 @@ Compare variant B after the next test.</textarea>
         try { payload = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { payload = null; }
         if (!payload?.state) return false;
         Object.entries(payload.state).forEach(([id, value]) => {
-          if (!apps[id]) return;
+          const appId = value.appId || (apps[id] ? id : id.split('-')[0]);
+          if (!apps[appId]) return;
+          if (!state[id]) state[id] = createWindowState(appId, value.instance || 1);
           Object.assign(state[id], value);
+          state[id].appId = appId;
+          state[id].instance = value.instance || 1;
+          instanceCounters[appId] = Math.max(instanceCounters[appId] || 1, state[id].instance);
           zCounter = Math.max(zCounter, value.z || 1);
           if (value.open) {
             openWindow(id);
@@ -1076,7 +1180,12 @@ Compare variant B after the next test.</textarea>
             if (element) element.hidden = state[id].minimized;
           }
         });
+        Object.entries(payload.instanceCounters || {}).forEach(([appId, count]) => {
+          if (apps[appId]) instanceCounters[appId] = Math.max(instanceCounters[appId], count);
+        });
         if (payload.activeId && state[payload.activeId]?.open && !state[payload.activeId].minimized) focusWindow(payload.activeId);
+        renderLaunchers();
+        renderTasks();
         saveIndicator.textContent = 'LAYOUT RESTORED';
         return true;
       }
@@ -1115,6 +1224,7 @@ Compare variant B after the next test.</textarea>
 
       window.WorkspaceBridge = Object.freeze({
         open: openWindow,
+        newWindow,
         pin: togglePin,
         closeUnpinned: closeUnpinnedWindows,
         publish,
@@ -1123,8 +1233,9 @@ Compare variant B after the next test.</textarea>
         getLayout: serializableState,
       });
       window.__workspaceDebug = {
-        getState: () => ({ activeId, zCounter, windows: serializableState() }),
+        getState: () => ({ activeId, zCounter, instanceCounters: { ...instanceCounters }, windows: serializableState() }),
         open: openWindow,
+        newWindow,
         minimize: minimizeWindow,
         close: closeWindow,
         maximize: toggleMaximize,
