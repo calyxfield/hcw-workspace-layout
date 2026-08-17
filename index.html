@@ -225,6 +225,20 @@
     }
     .app-window[hidden] { display: none; }
     .app-window.active { border-color: #0c2d3a; box-shadow: 8px 10px 0 rgb(18 42 50 / 35%); }
+    .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"] {
+      border-right: 0;
+      box-shadow: 0 8px 0 var(--shadow);
+    }
+    .app-window[data-app="palette"][data-palette-docked="true"][data-palette-side="right"].active {
+      box-shadow: 0 10px 0 rgb(18 42 50 / 35%);
+    }
+    .app-window[data-app="designer"][data-palette-docked="true"][data-palette-side="right"] {
+      border-right: 0;
+      box-shadow: 0 8px 0 var(--shadow);
+    }
+    .app-window[data-app="designer"][data-palette-docked="true"][data-palette-side="right"].active {
+      box-shadow: 0 10px 0 rgb(18 42 50 / 35%);
+    }
     .titlebar {
       min-width: 0;
       display: grid;
@@ -438,7 +452,7 @@
       min-width: 0;
       min-height: 0;
       overflow: hidden;
-      background-color: #253a43;
+      background-color: #14272f;
       outline: 0;
     }
     .work-grid:focus-visible { box-shadow: 0 0 0 2px #f6ad61 inset; }
@@ -449,7 +463,7 @@
       width: 1800px;
       height: 1200px;
       transform-origin: 0 0;
-      background-color: #253a43;
+      background-color: #14272f;
       background-image:
         linear-gradient(rgb(218 231 230 / 13%) 1px, transparent 1px),
         linear-gradient(90deg, rgb(218 231 230 / 13%) 1px, transparent 1px);
@@ -475,26 +489,26 @@
     .palette-tether {
       position: absolute;
       z-index: 3;
-      left: -25px;
+      left: -18px;
       top: 50%;
-      width: 25px;
-      height: 50px;
+      width: 18px;
+      height: 34px;
       display: none;
       place-items: center;
-      padding: 0 3px 0 8px;
+      padding: 0 2px 0 5px;
       border: 0;
       color: white;
       background: var(--orange);
       clip-path: polygon(100% 0, 0 50%, 100% 100%);
       transform: translateY(-50%);
       cursor: pointer;
-      font-size: .52rem;
+      font-size: .4rem;
       font-weight: 900;
     }
     [data-palette-side="right"] .palette-tether {
-      right: -25px;
+      right: -18px;
       left: auto;
-      padding: 0 8px 0 3px;
+      padding: 0 5px 0 2px;
       clip-path: polygon(0 0, 100% 50%, 0 100%);
     }
     [data-palette-docked="false"] .palette-tether { display: grid; }
@@ -830,8 +844,8 @@ Compare variant B after the next test.</textarea>
         const size = planeSize();
         const app = appFor(id);
         const baseMinW = Math.min(app.minW, size.width);
-        const minW = state[id]?.appId === 'designer' && size.width < app.minW + 25
-          ? Math.min(size.width, Math.max(230, size.width - 25))
+        const minW = state[id]?.appId === 'designer' && size.width < app.minW + 18
+          ? Math.min(size.width, Math.max(230, size.width - 18))
           : baseMinW;
         const w = clamp(rect.w, minW, Math.max(minW, size.width));
         const h = clamp(rect.h, Math.min(app.minH, size.height), Math.max(Math.min(app.minH, size.height), size.height));
@@ -882,14 +896,27 @@ Compare variant B after the next test.</textarea>
         return () => listeners.get(topic)?.delete(callback);
       }
 
+      function joinedWindowIds(id) {
+        const item = state[id];
+        if (!item) return [id];
+        const designerId = item.appId === 'designer' ? id : item.appId === 'palette' ? item.data?.ownerId : null;
+        if (!designerId || !state[designerId]) return [id];
+        const data = normalizeDesignerData(designerId);
+        const paletteId = data.paletteId;
+        const palette = paletteId ? state[paletteId] : null;
+        const joined = data.paletteDocked && state[designerId].open && !state[designerId].minimized && palette?.open && !palette.minimized;
+        return joined ? [designerId, paletteId] : [id];
+      }
+
       function focusWindow(id) {
         if (!state[id]?.open || state[id].minimized) return;
         activeId = id;
         zCounter += 1;
-        state[id].z = zCounter;
+        const activeIds = new Set(joinedWindowIds(id));
+        activeIds.forEach((windowId) => { state[windowId].z = zCounter; });
         document.querySelectorAll('.app-window').forEach((windowElement) => {
           const windowId = windowElement.dataset.window;
-          windowElement.classList.toggle('active', windowId === id);
+          windowElement.classList.toggle('active', activeIds.has(windowId));
           windowElement.style.zIndex = state[windowId]?.z || 1;
         });
         renderTasks();
@@ -1474,7 +1501,7 @@ Compare variant B after the next test.</textarea>
         if (size.width < 760) {
           // Keep one tether-width clear so the outward palette control remains
           // visible even when the Designer is the only open compact window.
-          placements = { designer: { x: 25, y: 8, w: size.width - 25, h: size.height - 16 } };
+          placements = { designer: { x: 18, y: 8, w: size.width - 18, h: size.height - 16 } };
         } else if (size.width < 1100) {
           const designerX = margin + paletteSpan;
           placements = {
