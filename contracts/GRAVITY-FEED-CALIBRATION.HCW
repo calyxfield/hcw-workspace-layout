@@ -5,6 +5,10 @@
     "id": "HC-001",
     "name": "Gravity Feed Calibration",
     "difficulty": "orientation",
+    "constraints": {
+      "maxCost": { "value": 30, "currency": "USD", "scope": "playerPlacedBlocks" },
+      "maxSize": { "width": 20, "height": 20, "scope": "allMachineBlocks" }
+    },
     "acceptanceTest": {
       "phases": [
         { "name": "feed", "durationTurns": 500, "input": "on" },
@@ -15,7 +19,7 @@
         "efficiency": { "numerator": "sandOut", "denominator": "sandIn" },
         "speed": { "numerator": "sandOut", "denominator": "turnsElapsed" },
         "price": { "metric": "placedBlockPriceTotal", "currency": "USD" },
-        "size": { "metric": "minimumBoundingRectangleArea", "scope": "allPlacedBlocks", "unit": "cells" }
+        "size": { "metric": "minimumBoundingRectangleArea", "scope": "allMachineBlocks", "unit": "cells" }
       }
     },
     "pricing": {
@@ -28,11 +32,16 @@
   },
   "world": {
     "width": 1800,
-    "height": 1200
+    "height": 1200,
+    "contractFrame": {
+      "width": 20,
+      "height": 20,
+      "input": { "x": 0, "y": 0, "type": "input", "fixed": true, "price": 0 },
+      "output": { "x": 19, "y": 0, "type": "output", "fixed": true, "price": 0 }
+    }
   },
-  "approvedComponents": ["sand", "wall", "input", "output"],
-  "requiredComponents": { "input": 1, "output": 1 },
+  "approvedComponents": ["sand", "wall"],
   "components": [],
   "simulation": { "running": false, "tick": 0 },
-  "note": "Starter save. Place Input and Output, run 500 turns with Input on and 500 off, then report efficiency, speed, price, and all-block bounding area."
+  "note": "Starter save. Input is fixed at top left and Output at top right. Stay within $30 and 20 × 20, then run 500 turns on and 500 off."
 }

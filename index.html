@@ -506,7 +506,12 @@
     .contract-number { padding: 4px 6px; color: white; background: var(--green); font-size: .52rem; font-weight: 900; }
     .contract-title { font-size: .67rem; font-weight: 900; }
     .contract-copy { margin: 0 0 9px; color: var(--ink-soft); font-size: .49rem; line-height: 1.45; }
-    .contract-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
+    .contract-limits { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 0 0 6px; border: 2px solid var(--orange); }
+    .contract-limit { min-width: 0; padding: 7px; border-right: 1px solid #a8b0ab; background: #f4f3e9; }
+    .contract-limit:last-child { border-right: 0; }
+    .contract-limit dt { margin: 0 0 3px; color: var(--orange); font-size: .4rem; font-weight: 900; letter-spacing: .08em; }
+    .contract-limit dd { margin: 0; font-size: .67rem; font-weight: 900; line-height: 1.2; }
+    .contract-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin: 0 0 9px; border: 1px solid #859089; }
     .contract-fact { min-width: 0; padding: 6px; border-right: 1px solid #a8b0ab; background: #f4f3e9; }
     .contract-fact:last-child { border-right: 0; }
     .contract-fact dt { margin: 0 0 3px; color: var(--green); font-size: .39rem; font-weight: 900; letter-spacing: .08em; }
@@ -518,6 +523,9 @@
     .contract-download { display: inline-flex; align-items: center; min-height: 24px; color: inherit; text-decoration: none; }
     .contract-status { color: var(--ink-soft); font-size: .4rem; font-weight: 800; }
     @media (max-width: 640px) {
+      .contract-limits { grid-template-columns: 1fr; }
+      .contract-limit { border-right: 0; border-bottom: 1px solid #a8b0ab; }
+      .contract-limit:last-child { border-bottom: 0; }
       .contract-facts { grid-template-columns: 1fr; }
       .contract-fact { border-right: 0; border-bottom: 1px solid #a8b0ab; }
       .contract-fact:last-child { border-bottom: 0; }
@@ -857,15 +865,16 @@ Compare variant B after the next test.</textarea>
           id: 'hc-001',
           code: 'HC-001',
           title: 'GRAVITY FEED CALIBRATION',
-          summary: 'Place an Input and Output, route spawned sand between them, then let the system drain.',
-          input: 'PLAYER-PLACED INPUT',
-          output: 'PLAYER-PLACED OUTPUT',
+          summary: 'Route Sand from the fixed Input at top left to the fixed Output at top right, then let the system drain.',
+          maxCost: '$30',
+          maxSize: '20 × 20',
+          ports: 'FIXED',
           test: '500 ON + 500 OFF',
           difficulty: 'ORIENTATION',
           folderName: 'GRAVITY FEED CALIBRATION CONTRACT',
           archiveAsset: 'contracts/GRAVITY-FEED-CALIBRATION-CONTRACT.zip',
           archiveName: 'GRAVITY FEED CALIBRATION CONTRACT.zip',
-          packageNote: 'The tester reports efficiency (sand out / sand in), speed (sand out / turns elapsed), price, and the bounding area of every placed block including Input and Output.',
+          packageNote: 'The tester reports efficiency (Sand out / Sand in), speed (Sand out / turns elapsed), price, and the bounding area of the whole machine including the fixed Input and Output.',
           files: Object.freeze([
             Object.freeze({ name: 'MATERIALS.PDF', kind: 'PDF', asset: 'contracts/HC-001-MATERIALS.pdf' }),
             Object.freeze({ name: 'REQUIREMENTS.PDF', kind: 'PDF', asset: 'contracts/HC-001-REQUIREMENTS.pdf' }),
@@ -1419,11 +1428,11 @@ Compare variant B after the next test.</textarea>
           : `${CONTRACTS.length} AVAILABLE`;
         if (!selected) {
           catalog.innerHTML = `
-            <p class="contract-list-label">SELECT A CONTRACT TO INSPECT ITS I/O, DIFFICULTY, AND PROJECT PACKAGE</p>
+            <p class="contract-list-label">SELECT A CONTRACT TO INSPECT ITS LIMITS, I/O, TEST, AND PROJECT PACKAGE</p>
             ${CONTRACTS.map((contract) => `
               <button class="contract-card" data-contract-id="${contract.id}" type="button">
                 <span class="contract-card-code">${contract.code}</span>
-                <span class="contract-card-copy"><strong>${contract.title}</strong><small>${contract.input} → ${contract.output}</small></span>
+                <span class="contract-card-copy"><strong>${contract.title}</strong><small>${contract.maxCost} · ${contract.maxSize} · ${contract.ports} I/O</small></span>
                 <span class="contract-card-open" aria-hidden="true">›</span>
               </button>`).join('')}`;
           detail.innerHTML = '';
@@ -1432,9 +1441,12 @@ Compare variant B after the next test.</textarea>
         detail.innerHTML = `
           <div class="contract-id"><span class="contract-number">${selected.code}</span><span class="contract-title">${selected.title}</span></div>
           <p class="contract-copy">${selected.summary}</p>
+          <dl class="contract-limits">
+            <div class="contract-limit"><dt>MAX COST</dt><dd>${selected.maxCost}</dd></div>
+            <div class="contract-limit"><dt>MAX SIZE</dt><dd>${selected.maxSize}</dd></div>
+          </dl>
           <dl class="contract-facts">
-            <div class="contract-fact"><dt>INPUT</dt><dd>${selected.input}</dd></div>
-            <div class="contract-fact"><dt>OUTPUT</dt><dd>${selected.output}</dd></div>
+            <div class="contract-fact"><dt>INPUT / OUTPUT</dt><dd>${selected.ports}</dd></div>
             <div class="contract-fact"><dt>TEST</dt><dd>${selected.test}</dd></div>
             <div class="contract-fact"><dt>DIFFICULTY</dt><dd>${selected.difficulty}</dd></div>
           </dl>
