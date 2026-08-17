@@ -268,7 +268,8 @@
     .window-control.pin svg { fill: currentColor; stroke: none; }
 
     .window-body { min-width: 0; min-height: 0; overflow: auto; background: var(--paper); }
-    .app-window[data-app="designer"] .window-body { overflow: visible; }
+    .app-window[data-app="designer"] .window-body,
+    .app-window[data-app="palette"] .window-body { overflow: visible; }
     .window-footer {
       min-width: 0;
       display: flex;
@@ -496,7 +497,7 @@
       padding: 0 8px 0 3px;
       clip-path: polygon(0 0, 100% 50%, 0 100%);
     }
-    .designer-layout.palette-detached .palette-tether { display: grid; }
+    [data-palette-docked="false"] .palette-tether { display: grid; }
     .palette-tether:hover { background: #e1844e; }
     .detached-palette { height: 100%; min-height: 0; padding: 9px; overflow: auto; background: #d4d5cc; }
     .palette-link { color: var(--ink-soft); font-size: .44rem; }
@@ -672,7 +673,6 @@
       <div class="app-toolbar">
         <span class="palette-link" data-palette-link>LINKED TO SYSTEM DESIGNER</span>
         <span class="tool-spacer"></span>
-        <button class="tool-button" data-palette-action="dock">DOCK</button>
       </div>
       <aside class="detached-palette">
         <div class="rail-label">PLACEABLE COMPONENTS</div>
@@ -680,6 +680,7 @@
         <button class="component-chip" data-component="fixed" aria-label="Fixed cell" title="Fixed cell"><span class="component-cell wall"></span><span class="component-name">FIXED CELL</span></button>
         <button class="component-chip disabled" disabled aria-label="Modifier unavailable" title="Modifier unavailable"><span class="component-cell"></span><span class="component-name">MODIFIER / UNAVAILABLE</span></button>
       </aside>
+      <button class="palette-tether" data-palette-action="dock" aria-label="Dock component palette to System Designer" title="Dock component palette to System Designer">DS</button>
     </div>
   </template>
 
@@ -761,7 +762,7 @@ Compare variant B after the next test.</textarea>
       const GRID = 9;
       const DESIGN_WORLD = { width: 1800, height: 1200 };
       const ZOOM_LEVELS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-      const PALETTE_DOCK_GAP = 8;
+      const PALETTE_DOCK_GAP = 0;
       let zCounter = 20;
       let activeId = null;
       let toastTimer = null;
@@ -854,6 +855,10 @@ Compare variant B after the next test.</textarea>
         if (state[id]?.appId === 'designer') {
           renderDesigner(id);
           if (!options.skipDock && normalizeDesignerData(id).paletteDocked) positionDockedPalette(id);
+        }
+        if (state[id]?.appId === 'palette') {
+          const ownerId = state[id].data?.ownerId;
+          if (ownerId) renderPaletteLink(ownerId);
         }
       }
 
@@ -955,6 +960,41 @@ Compare variant B after the next test.</textarea>
         return data;
       }
 
+      function renderPaletteLink(designerId) {
+        const owner = state[designerId];
+        if (!owner || owner.appId !== 'designer') return;
+        const data = normalizeDesignerData(designerId);
+        const palette = data.paletteId ? state[data.paletteId] : null;
+        const ownerElement = document.querySelector(`[data-window="${designerId}"]`);
+        const paletteElement = data.paletteId ? document.querySelector(`[data-window="${data.paletteId}"]`) : null;
+        const joined = Boolean(data.paletteDocked && owner.open && !owner.minimized && palette?.open && !palette.minimized);
+        let ownerSide = data.paletteDockSide;
+        if (!joined && palette?.open && !palette.minimized) {
+          ownerSide = palette.x + palette.w / 2 < owner.x + owner.w / 2 ? 'left' : 'right';
+          data.paletteDockSide = ownerSide;
+        }
+        const paletteSide = ownerSide === 'left' ? 'right' : 'left';
+        if (ownerElement) {
+          ownerElement.dataset.paletteDocked = String(joined);
+          ownerElement.dataset.paletteSide = ownerSide;
+          const tether = ownerElement.querySelector('.palette-tether');
+          if (tether) {
+            const label = !palette?.open || palette.minimized ? 'Restore and dock component palette' : 'Dock component palette';
+            tether.title = label;
+            tether.setAttribute('aria-label', label);
+          }
+        }
+        if (paletteElement) {
+          paletteElement.dataset.paletteDocked = String(joined);
+          paletteElement.dataset.paletteSide = paletteSide;
+          const tether = paletteElement.querySelector('.palette-tether');
+          if (tether) {
+            tether.title = `Dock to ${windowTitle(designerId)}`;
+            tether.setAttribute('aria-label', tether.title);
+          }
+        }
+      }
+
       function renderDesigner(id) {
         if (state[id]?.appId !== 'designer') return;
         const data = normalizeDesignerData(id);
@@ -964,7 +1004,6 @@ Compare variant B after the next test.</textarea>
         const viewport = element.querySelector('.work-grid');
         const world = element.querySelector('.design-world');
         layout?.classList.toggle('palette-detached', data.paletteDetached);
-        element.dataset.paletteSide = data.paletteDockSide;
         element.querySelectorAll('[data-component]').forEach((button) => button.classList.toggle('selected', button.dataset.component === data.selectedComponent));
         if (!viewport || !world) return;
         const zoom = clamp(Number(data.view.zoom) || 1, ZOOM_LEVELS[0], ZOOM_LEVELS.at(-1));
@@ -979,11 +1018,7 @@ Compare variant B after the next test.</textarea>
         element.dataset.viewZoom = String(zoom);
         const readout = element.querySelector('[data-view-readout]');
         if (readout) readout.textContent = `${Math.round(zoom * 100)}% · ${Math.round(data.view.x)},${Math.round(data.view.y)}`;
-        const tether = element.querySelector('.palette-tether');
-        if (tether) {
-          const palette = data.paletteId ? state[data.paletteId] : null;
-          tether.title = !palette?.open || palette.minimized ? 'Restore and dock component palette' : 'Dock component palette to this side';
-        }
+        renderPaletteLink(id);
       }
 
       function panDesigner(id, dx, dy) {
@@ -1033,6 +1068,7 @@ Compare variant B after the next test.</textarea>
         element.querySelectorAll('[data-component]').forEach((button) => button.classList.toggle('selected', button.dataset.component === ownerData.selectedComponent));
         const link = element.querySelector('[data-palette-link]');
         if (link) link.textContent = `${ownerData.paletteDocked ? 'DOCKED' : 'LINKED'} TO ${windowTitle(ownerId)}`;
+        renderPaletteLink(ownerId);
       }
 
       function selectComponent(designerId, component) {
